@@ -37,4 +37,4 @@ Abre la app en una pestaña y el admin en otra (la app tiene un enlace “Abrir 
 - La simulación de movimiento corre en la pestaña de la app: mantenla abierta mientras pruebas.
 - Mapa, GPS, pagos, SMS, llamadas y selfie son simulados. Tarifas, seguros, comisión (10 %), cancelación (20 %), espera y coordenadas son valores de demostración.
 - El cierre nocturno de la vía Buga–Buenaventura (8 p. m. a 6 a. m.) es un supuesto de Analdex por confirmar.
-- Nombre de marca: en ambos archivos busca `const BRAND='TUDOBENN'` y edita esa línea.
+- Nombre de marca: en ambos archivos busca `const BRAND='ContainerGo'` y edita esa línea.
