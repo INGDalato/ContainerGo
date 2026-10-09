@@ -1,4 +1,4 @@
-# Demo TUDOBENN: app y panel admin (prototipo v4)
+# Demo ContainerGo: app y panel admin (prototipo v4)
 
 Dos códigos independientes que comparten los mismos datos de demostración:
 
