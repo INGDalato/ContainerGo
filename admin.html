@@ -1,0 +1,869 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Prototipo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --brand:#1546C8;--brand-strong:#0E3596;--brand-soft:#E5ECFB;--on-brand:#FFFFFF;
+  --ink:#0F1B2D;--ink-2:#46566C;--ink-3:#77869B;--line:#D9E1EB;
+  --bg:#E4EAF2;--surface:#FFFFFF;--surface-2:#F3F6FA;
+  --ok:#0B7F4F;--ok-soft:#DDF3E8;--warn:#94570A;--warn-soft:#FFF0D2;--bad:#B42828;--bad-soft:#FBE2E2;
+  --signal:#F0A400;--frame:#0F1B2D;
+  --map-land:#EEF1EA;--map-water:#CFE0F2;--map-line:#D3DACB;--map-river:#A9C6E6;--map-route:#BCC6D4;
+  --r-lg:22px;--r-md:16px;--r-sm:10px;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+  font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --brand:#6B97FF;--brand-strong:#9DB9FF;--brand-soft:#1A2A4D;--on-brand:#06122B;
+  --ink:#EEF3FA;--ink-2:#B3C0D3;--ink-3:#8593A8;--line:#26354D;
+  --bg:#060B15;--surface:#101B2D;--surface-2:#0B1424;
+  --ok:#4CD394;--ok-soft:#10362A;--warn:#F2B347;--warn-soft:#3A2A0C;--bad:#FF8080;--bad-soft:#3E1717;
+  --signal:#FFB627;--frame:#000;
+  --map-land:#15223A;--map-water:#0C1E3B;--map-line:#1F3049;--map-river:#24497A;--map-route:#33466A;
+}}
+:root[data-theme="dark"]{
+  --brand:#6B97FF;--brand-strong:#9DB9FF;--brand-soft:#1A2A4D;--on-brand:#06122B;
+  --ink:#EEF3FA;--ink-2:#B3C0D3;--ink-3:#8593A8;--line:#26354D;
+  --bg:#060B15;--surface:#101B2D;--surface-2:#0B1424;
+  --ok:#4CD394;--ok-soft:#10362A;--warn:#F2B347;--warn-soft:#3A2A0C;--bad:#FF8080;--bad-soft:#3E1717;
+  --signal:#FFB627;--frame:#000;
+  --map-land:#15223A;--map-water:#0C1E3B;--map-line:#1F3049;--map-river:#24497A;--map-route:#33466A;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{height:100%}
+body{height:100%;margin:0;background:var(--bg);color:var(--ink);display:flex;flex-direction:column;font-size:16px;line-height:1.45}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--brand);outline-offset:2px}
+
+/* Barra de demo (fuera de la app) */
+.demo-bar{display:flex;align-items:center;justify-content:center;gap:10px;padding:8px 12px;flex-wrap:wrap;font-size:13px;color:var(--ink-2)}
+.demo-bar .tag{font-weight:600}
+.seg{display:inline-flex;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:3px}
+.seg button{border:0;background:transparent;padding:6px 14px;border-radius:999px;font-weight:600;font-size:13px;color:var(--ink-2)}
+.seg button[aria-pressed="true"]{background:var(--brand);color:var(--on-brand)}
+.linkbtn{border:0;background:none;color:var(--brand);font-weight:600;font-size:13px;padding:6px}
+
+.stage{flex:1;display:flex;justify-content:center;align-items:flex-start;min-height:0}
+.phone{position:relative;width:100%;max-width:440px;height:100%;background:var(--surface-2);overflow:hidden;display:flex;flex-direction:column}
+@media (min-width:640px){
+  .stage{padding:4px 0 20px}
+  .phone{width:392px;height:min(830px,calc(100vh - 80px));border-radius:44px;border:11px solid var(--frame);box-shadow:0 40px 80px -30px rgba(15,27,45,.55)}
+}
+#app{flex:1;display:flex;flex-direction:column;min-height:0}
+.screen{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+.pad{padding:16px}
+.stack>*+*{margin-top:12px}
+
+/* Tipografía */
+h1,h2,h3{margin:0;letter-spacing:-.015em}
+.h1{font-size:28px;font-weight:800;line-height:1.15}
+.h2{font-size:21px;font-weight:700;line-height:1.25}
+.h3{font-size:17px;font-weight:700}
+.muted{color:var(--ink-2)}
+.faint{color:var(--ink-3);font-size:13px}
+.num{font-variant-numeric:tabular-nums}
+
+/* Header */
+.hdr{position:sticky;top:0;z-index:3;display:flex;align-items:center;gap:6px;min-height:58px;padding:8px 10px;background:var(--surface);border-bottom:1px solid var(--line)}
+.hdr .t{flex:1;font-weight:700;font-size:17px;padding-left:4px}
+.hdr .t small{display:block;font-weight:500;font-size:12px;color:var(--ink-3)}
+.iconbtn{display:inline-grid;place-items:center;width:44px;height:44px;border-radius:12px;border:0;background:transparent;color:var(--ink)}
+.iconbtn:active{background:var(--surface-2)}
+
+/* Botones */
+.btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:58px;padding:0 20px;border-radius:16px;border:0;font-weight:700;font-size:17px;text-decoration:none;transition:transform .08s}
+.btn:active{transform:scale(.985)}
+.btn-primary{background:var(--brand);color:var(--on-brand)}
+.btn-secondary{background:var(--surface);color:var(--ink);border:1.5px solid var(--line)}
+.btn-ok{background:var(--ok);color:#fff}
+.btn-sm{min-height:44px;font-size:15px;border-radius:12px;padding:0 14px;width:auto}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.row{display:flex;gap:10px;align-items:center}
+.row>.grow{flex:1}
+
+/* Tarjetas y piezas */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);padding:16px}
+button.card{display:block;width:100%;text-align:left}
+.badge{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font-size:13px;font-weight:600;white-space:nowrap}
+.b-neutral{background:var(--surface-2);color:var(--ink-2);border:1px solid var(--line)}
+.b-brand{background:var(--brand-soft);color:var(--brand-strong)}
+.b-ok{background:var(--ok-soft);color:var(--ok)}
+.b-warn{background:var(--warn-soft);color:var(--warn)}
+.b-bad{background:var(--bad-soft);color:var(--bad)}
+.dotlive{width:8px;height:8px;border-radius:50%;background:currentColor}
+.route{display:flex;align-items:center;gap:8px;font-weight:700;font-size:17px}
+.route .arrow{color:var(--ink-3);font-weight:500}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:8px 16px;font-size:15px}
+.kv dt{color:var(--ink-2)}
+.kv dd{margin:0;text-align:right;font-weight:600;overflow-wrap:anywhere}
+.divider{height:1px;background:var(--line);margin:12px 0}
+.section-t{font-size:15px;font-weight:700;color:var(--ink-2);margin:20px 0 8px}
+.avatar{flex:none;display:grid;place-items:center;width:46px;height:46px;border-radius:14px;background:var(--brand-soft);color:var(--brand-strong);font-weight:800}
+.avatar.lg{width:64px;height:64px;border-radius:20px;font-size:22px}
+.mini-steps{display:flex;gap:4px;margin-top:12px}
+.mini-steps i{flex:1;height:6px;border-radius:3px;background:var(--line)}
+.mini-steps i.on{background:var(--brand)}
+.mini-steps.ok i.on{background:var(--ok)}
+
+/* Formularios */
+.field{display:block}
+.field>span{display:block;font-size:14px;font-weight:600;color:var(--ink-2);margin-bottom:6px}
+.input{width:100%;min-height:52px;padding:12px 14px;border-radius:12px;border:1.5px solid var(--line);background:var(--surface);font-size:16px}
+textarea.input{min-height:84px;resize:vertical}
+.input:focus{border-color:var(--brand);outline:none}
+.hint{font-size:13px;margin-top:6px;color:var(--ink-3)}
+.hint.ok{color:var(--ok)}.hint.bad{color:var(--bad)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.ctsel{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.ctsel button{display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 6px;border-radius:14px;border:1.5px solid var(--line);background:var(--surface);font-weight:700;font-size:15px}
+.ctsel button small{font-weight:500;font-size:12px;color:var(--ink-3)}
+.ctsel button[aria-pressed="true"]{border-color:var(--brand);background:var(--brand-soft);color:var(--brand-strong)}
+.ctsel svg.cont{width:100%;max-width:74px;height:30px}
+.errbox{background:var(--bad-soft);color:var(--bad);padding:12px 14px;border-radius:12px;font-size:14px;font-weight:600}
+.note{background:var(--surface-2);border:1px dashed var(--line);padding:12px 14px;border-radius:12px;font-size:13px;color:var(--ink-2)}
+
+/* Chips de filtro */
+.chips{display:flex;gap:8px;overflow-x:auto;padding:12px 16px 4px}
+.chip{flex:none;border:1.5px solid var(--line);background:var(--surface);padding:9px 16px;border-radius:999px;font-weight:600;font-size:14px}
+.chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--surface)}
+
+/* Tab bar */
+.tabbar{display:flex;background:var(--surface);border-top:1px solid var(--line);padding-bottom:4px}
+.tabbar button{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:9px 0 6px;border:0;background:transparent;color:var(--ink-3);font-size:12px;font-weight:600}
+.tabbar button[aria-current="page"]{color:var(--brand)}
+
+/* Mapa simulado */
+.map{position:relative;overflow:hidden;background:var(--map-land)}
+.map svg{display:block;width:100%;height:100%}
+.map-note{position:absolute;left:10px;bottom:8px;font-size:11px;color:var(--ink-3);background:color-mix(in srgb,var(--surface) 80%,transparent);padding:2px 8px;border-radius:6px}
+.m-water{fill:var(--map-water)}
+.m-ridge{fill:none;stroke:var(--map-line);stroke-width:1.2;stroke-dasharray:2 4}
+.m-river{fill:none;stroke:var(--map-river);stroke-width:1.6}
+.m-route-base{fill:none;stroke:var(--map-route);stroke-width:5;stroke-linecap:round;stroke-linejoin:round}
+.m-route-done{fill:none;stroke:var(--brand);stroke-width:5;stroke-linecap:round;stroke-linejoin:round;transition:stroke-dashoffset 1s linear}
+.m-city{fill:var(--surface);stroke:var(--ink-3);stroke-width:1.5}
+.m-city-on{fill:var(--ink);stroke:var(--surface);stroke-width:2}
+.m-label{font-size:9.5px;fill:var(--ink-3);font-weight:600;font-family:inherit}
+.m-label.on{fill:var(--ink);font-weight:800;font-size:10.5px}
+.m-sea{font-size:8px;fill:var(--ink-3);font-style:italic;opacity:.8}
+.m-truck-g{transition:transform 1s linear}
+.m-halo{fill:var(--signal);opacity:.25;transform-box:fill-box;transform-origin:center;animation:halo 1.8s ease-out infinite}
+.m-truck{fill:var(--signal);stroke:var(--ink);stroke-width:1.4}
+@keyframes halo{0%{transform:scale(.6);opacity:.45}100%{transform:scale(1.6);opacity:0}}
+@media (prefers-reduced-motion:reduce){.m-halo{animation:none}.m-route-done,.m-truck-g{transition:none}}
+
+/* Panel flotante sobre el mapa */
+.over{margin:-28px 12px 0;position:relative;z-index:2}
+.eta{font-size:30px;font-weight:800;letter-spacing:-.02em}
+.live{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--ok)}
+.live.off{color:var(--ink-3)}
+
+/* Stepper */
+.stepper{list-style:none;margin:0;padding:0}
+.stepper li{position:relative;display:flex;gap:14px;padding-bottom:18px}
+.stepper li:last-child{padding-bottom:0}
+.stepper li::before{content:"";position:absolute;left:13px;top:28px;bottom:0;width:2px;background:var(--line)}
+.stepper li:last-child::before{display:none}
+.stepper li.done::before{background:var(--brand);width:3px;left:12.5px}
+.stepper .dot{flex:none;display:grid;place-items:center;width:28px;height:28px;border-radius:9px;border:2px solid var(--line);background:var(--surface);color:var(--on-brand)}
+.stepper li.done .dot{background:var(--brand);border-color:var(--brand)}
+.stepper li.now .dot{border-color:var(--brand);box-shadow:0 0 0 4px var(--brand-soft)}
+.stepper li.now .dot::after{content:"";width:10px;height:10px;border-radius:3px;background:var(--brand)}
+.stepper li.final .dot{background:var(--ok);border-color:var(--ok);color:#fff;box-shadow:none}
+.stepper li.final .dot::after{display:none}
+.stepper b{display:block;font-size:15px}
+.stepper small{color:var(--ink-3);font-size:13px}
+.stepper li.todo b{color:var(--ink-3);font-weight:600}
+
+/* Evidencias */
+.evgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.evtile{display:block;width:100%;padding:0;border:1.5px dashed var(--line);background:var(--surface);border-radius:14px;overflow:hidden;text-align:left}
+.evtile .ph{display:grid;place-items:center;aspect-ratio:4/3;color:var(--ink-3);gap:4px;font-size:13px;font-weight:600}
+.evtile.has{border-style:solid}
+.evtile .ph svg.photo{width:100%;height:100%}
+.evtile .meta{padding:8px 10px;font-size:12px;color:var(--ink-2);border-top:1px solid var(--line)}
+.evtile .meta b{display:block;color:var(--ink);font-size:13px}
+
+/* Historial */
+.timeline{list-style:none;margin:0;padding:0}
+.timeline li{padding:14px 0;border-bottom:1px solid var(--line)}
+.timeline li:last-child{border-bottom:0}
+
+/* Ofertas */
+.offer .price{font-size:22px;font-weight:800;letter-spacing:-.02em}
+.stars{color:var(--signal);font-weight:700}
+
+/* Sheet y toast */
+.scrim{position:absolute;inset:0;background:rgba(6,11,21,.5);z-index:20;display:flex;align-items:flex-end;animation:fade .15s ease-out}
+.sheet{width:100%;max-height:88%;overflow-y:auto;background:var(--surface);border-radius:24px 24px 0 0;padding:10px 18px 22px;animation:up .2s ease-out}
+.sheet .grab{width:40px;height:5px;border-radius:3px;background:var(--line);margin:0 auto 14px}
+@keyframes up{from{transform:translateY(30px);opacity:.5}to{transform:none;opacity:1}}
+@keyframes fade{from{opacity:0}}
+.toast{position:absolute;left:12px;right:12px;bottom:78px;z-index:30;display:flex;gap:10px;align-items:center;background:var(--ink);color:var(--surface);padding:14px 16px;border-radius:16px;font-weight:600;font-size:15px;animation:up .2s ease-out}
+.urlbox{font-size:13px;word-break:break-all;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.check{display:flex;gap:12px;align-items:flex-start;padding:12px;border-radius:12px;border:1.5px solid var(--line);font-weight:600;font-size:15px}
+.check input{width:22px;height:22px;margin:0;accent-color:var(--brand)}
+
+/* Splash y rol */
+.splash{flex:1;display:flex;flex-direction:column;justify-content:space-between;background:var(--brand);color:var(--on-brand);padding:56px 28px 36px;border:0;text-align:left;width:100%}
+.splash .name{font-size:40px;font-weight:800;letter-spacing:-.03em;line-height:1}
+.splash .tl{font-size:18px;opacity:.9;max-width:16em;margin-top:12px}
+.rolecard{display:flex;gap:16px;align-items:flex-start;width:100%;text-align:left;padding:20px;border-radius:20px;border:1.5px solid var(--line);background:var(--surface)}
+.rolecard:active{border-color:var(--brand)}
+.rolecard .ico{flex:none;display:grid;place-items:center;width:56px;height:56px;border-radius:16px;background:var(--brand-soft);color:var(--brand-strong)}
+.rolecard b{display:block;font-size:19px;line-height:1.25;margin-bottom:4px}
+
+/* Ingresos */
+.bars{display:flex;align-items:flex-end;gap:8px;height:120px;margin-top:14px}
+.bars div{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end}
+.bars i{width:100%;border-radius:6px 6px 2px 2px;background:var(--brand-soft);min-height:3px}
+.bars i.cur{background:var(--brand)}
+.bars span{font-size:11px;color:var(--ink-3);font-weight:600}
+.stat3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat3 .card{padding:12px}
+.stat3 b{display:block;font-size:20px;font-weight:800}
+.stat3 span{font-size:12px;color:var(--ink-2)}
+.menu{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);overflow:hidden}
+.menu button,.menu .mi{display:flex;align-items:center;gap:14px;width:100%;min-height:56px;padding:10px 16px;border:0;background:transparent;text-align:left;font-weight:600;font-size:15px;border-bottom:1px solid var(--line)}
+.menu>:last-child{border-bottom:0}
+.menu .grow{flex:1}
+.banner{display:flex;gap:12px;align-items:center;width:100%;text-align:left;margin:12px 16px 0;width:calc(100% - 32px);padding:14px 16px;border-radius:16px;border:0;background:var(--brand);color:var(--on-brand);font-weight:700}
+.empty{text-align:center;padding:36px 20px;color:var(--ink-2)}
+.empty .ico{display:inline-grid;place-items:center;width:64px;height:64px;border-radius:20px;background:var(--surface);border:1px solid var(--line);color:var(--ink-3);margin-bottom:12px}
+.stars-in{display:flex;gap:6px}
+.stars-in button{border:0;background:none;padding:4px;color:var(--line)}
+.stars-in button.on{color:var(--signal)}
+.stars-in svg{fill:currentColor}
+
+/* ===== Panel admin ===== */
+#admin{display:none;position:relative;flex:1;min-height:0;background:var(--surface-2);border-top:1px solid var(--line)}
+body.is-admin .stage{display:none}
+body.is-admin #admin{display:flex}
+#admin-view{display:flex;flex:1;min-height:0;min-width:0}
+.a-side{width:228px;flex:none;background:var(--surface);border-right:1px solid var(--line);padding:16px 10px;display:flex;flex-direction:column;gap:2px;overflow-y:auto}
+.a-brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:17px;padding:4px 10px 18px}
+.a-nav{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:10px;border:0;background:none;font-weight:600;font-size:15px;color:var(--ink-2);text-align:left;width:100%}
+.a-nav:hover{background:var(--surface-2)}
+.a-nav[aria-current="page"]{background:var(--brand-soft);color:var(--brand-strong)}
+.a-nav .cnt{margin-left:auto;background:var(--bad);color:#fff;font-size:12px;border-radius:999px;padding:1px 8px}
+.a-main{flex:1;min-width:0;overflow-y:auto;padding:0 28px 32px}
+.a-top{padding:24px 0 16px}
+.md{display:grid;grid-template-columns:minmax(260px,340px) minmax(0,1fr);gap:18px;align-items:start}
+.a-list{display:flex;flex-direction:column;gap:8px}
+.a-item{display:block;width:100%;text-align:left;font-size:14px}
+.a-item.sel{border-color:var(--brand);box-shadow:inset 0 0 0 1px var(--brand)}
+.a-back{display:none;margin-bottom:8px}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.kpi{text-align:left}
+.kpi b{display:block;font-size:34px;font-weight:800;letter-spacing:-.02em}
+.kpi span{color:var(--ink-2);font-size:14px}
+.chk header{display:flex;gap:12px;align-items:center;margin-bottom:12px}
+.chk .n{flex:none;display:grid;place-items:center;width:30px;height:30px;border-radius:9px;background:var(--surface-2);border:1px solid var(--line);font-weight:800;font-size:14px}
+.docs{border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:10px}
+.docrow{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--line);font-size:14px}
+.docrow:last-child{border-bottom:0}
+.docrow .grow{flex:1}
+.docrow .ic{flex:none;color:var(--ink-3)}
+.docrow.good .ic{color:var(--ok)}.docrow.warn .ic{color:var(--bad)}
+.grid2a{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.thread{border:1px solid var(--line);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:8px;background:var(--surface)}
+.msg{padding:10px 12px;border-radius:12px;background:var(--surface-2);max-width:88%;font-size:14px}
+.msg.staff{background:var(--brand-soft);margin-left:auto}
+.msg .faint{font-size:12px;margin-bottom:2px}
+.conn{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
+.conn .card{display:flex;flex-direction:column;gap:8px}
+.conn .card p{margin:0;font-size:14px;color:var(--ink-2);flex:1}
+pre.code{margin:0;padding:14px;border-radius:12px;background:var(--surface-2);border:1px solid var(--line);font-size:12.5px;overflow-x:auto;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+#admin .scrim{align-items:center;justify-content:center;padding:16px}
+#admin .sheet{max-width:560px;border-radius:20px;max-height:90%}
+#admin .sheet .grab{display:none}
+#admin .toast{left:auto;right:20px;bottom:20px;max-width:440px}
+@media (max-width:900px){
+  #admin-view{flex-direction:column}
+  .a-side{width:auto;flex-direction:row;overflow-x:auto;border-right:0;border-bottom:1px solid var(--line);padding:8px}
+  .a-brand,.a-side>.faint{display:none}
+  .a-nav{width:auto;white-space:nowrap;padding:9px 12px}
+  .a-main{padding:0 14px 24px}
+  .md{grid-template-columns:minmax(0,1fr)}
+  .md.has-sel .a-list{display:none}
+  .md:not(.has-sel) .a-detail{display:none}
+  .a-back{display:inline-flex}
+  .kpis,.grid2a{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:520px){.grid2a{grid-template-columns:minmax(0,1fr)}}
+
+/* ===== v4: seguridad, PIN, chat, pagos ===== */
+.btn-danger{background:var(--bad);color:#fff}
+.opt{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:14px;border-radius:14px;border:1.5px solid var(--line);background:var(--surface)}
+.opt .rd{flex:none;width:20px;height:20px;border-radius:50%;border:2px solid var(--line)}
+.opt[aria-pressed="true"]{border-color:var(--brand);background:var(--brand-soft)}
+.opt[aria-pressed="true"] .rd{border-color:var(--brand);background:radial-gradient(var(--brand) 45%,transparent 50%)}
+.opt .grow{flex:1}
+.pin{display:flex;gap:10px;justify-content:center;margin:12px 0}
+.pin span{width:52px;height:64px;display:grid;place-items:center;border-radius:14px;background:var(--brand-soft);color:var(--brand-strong);font-size:32px;font-weight:800;font-variant-numeric:tabular-nums}
+.geo{display:flex;gap:10px;align-items:center;padding:12px 14px;border-radius:12px;background:var(--warn-soft);color:var(--warn);font-weight:600;font-size:14px}
+.geo.in{background:var(--ok-soft);color:var(--ok)}
+.switch{flex:none;width:52px;height:30px;border-radius:999px;border:0;background:var(--line);position:relative;padding:0}
+.switch i{position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;transition:transform .15s}
+.switch[aria-checked="true"]{background:var(--ok)}
+.switch[aria-checked="true"] i{transform:translateX(22px)}
+.screen.chat{display:flex;flex-direction:column;gap:8px;padding:12px 14px}
+.bub{max-width:82%;padding:10px 12px;border-radius:16px;background:var(--surface);border:1px solid var(--line);font-size:15px;align-self:flex-start}
+.bub.me{align-self:flex-end;background:var(--brand);color:var(--on-brand);border-color:var(--brand)}
+.bub.adm{align-self:center;background:var(--warn-soft);color:var(--warn);border-color:transparent;max-width:92%}
+.bub .faint{font-size:11px;margin-bottom:2px;color:inherit;opacity:.75}
+.chatph{width:150px;margin-bottom:6px;border-radius:10px;overflow:hidden}
+.chatin{padding:10px 12px;background:var(--surface);border-top:1px solid var(--line)}
+.chatin .input{min-height:46px}
+.alertcard.bad{border-left:5px solid var(--bad)}
+.alertcard.warn{border-left:5px solid var(--signal)}
+.tabbar button{font-size:11px}
+</style>
+</head>
+<body class="is-admin">
+<div class="demo-bar" role="region" aria-label="Controles de la demostración">
+  <span class="tag" id="brand-tag">Admin</span>
+  <a class="linkbtn" href="index.html" target="_blank" rel="noopener">Abrir la app (cliente y conductor) ↗</a>
+  <button class="linkbtn" data-a="resetDemo">Reiniciar demo</button>
+</div>
+<div id="admin"><div id="admin-view"></div><div id="admin-sheet"></div><div id="admin-toast" aria-live="polite"></div></div>
+<div id="sheet-root" hidden></div><div id="toast-root" hidden></div>
+<script>
+/* ============================================================
+   Prototipo navegable v4. Sin backend: todo el estado vive en
+   memoria (objeto S). Datos 100 % ficticios. Coordenadas, tarifas,
+   seguros y tiempos son valores de demostración por confirmar.
+   ============================================================ */
+const BRAND='ContainerGo-Admin'; // nombre de la plataforma: cambia solo esta línea
+
+// ---------- Íconos propios (trazos simples) ----------
+const I={
+ back:'<path d="M15 5l-7 7 7 7"/>',
+ home:'<path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',
+ route:'<circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="6" r="2.5"/><path d="M8.5 18H15a3 3 0 0 0 0-6H9a3 3 0 0 1 0-6h6.5"/>',
+ user:'<circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/>',
+ list:'<path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/>',
+ wallet:'<rect x="3" y="6" width="18" height="14" rx="2"/><path d="M3 10h18M16 15h2"/>',
+ truck:'<path d="M2 6h11v10H2zM13 10h4l3 3v3h-7z"/><circle cx="6" cy="18" r="2"/><circle cx="17" cy="18" r="2"/>',
+ phone:'<path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/>',
+ chat:'<path d="M4 5h16v11H8l-4 4z"/>',
+ camera:'<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>',
+ check:'<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+ nav:'<path d="M12 2l8 19-8-4-8 4z"/>',
+ box:'<rect x="3" y="7" width="18" height="11" rx="1"/><path d="M7 7v11M11 7v11M15 7v11"/>',
+ clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+ star:'<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/>',
+ doc:'<path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4M9 12h6M9 16h6"/>',
+ shield:'<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/>',
+ out:'<path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10"/>',
+ pin:'<path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>',
+ refresh:'<path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/>',
+ gps:'<circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="8"/><path d="M12 1v3M12 20v3M1 12h3M20 12h3"/>',
+ chevron:'<path d="M9 5l7 7-7 7"/>',
+ plus:'<path d="M12 5v14M5 12h14"/>',
+ bell:'<path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4zM10 21h4"/>',
+ bank:'<path d="M3 10l9-5 9 5M5 10v8M9.5 10v8M14.5 10v8M19 10v8M3 20h18"/>',
+ help:'<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1 .9-1 1.7M12 17h.01"/>',
+ swap:'<path d="M7 4L3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7"/>',
+ alert:'<path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18h.01"/>',
+ lock:'<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
+ x:'<path d="M6 6l12 12M18 6L6 18"/>',
+ qr:'<rect x="4" y="4" width="6" height="6"/><rect x="14" y="4" width="6" height="6"/><rect x="4" y="14" width="6" height="6"/><path d="M14 14h2v2h-2zM18 14h2v6h-4M14 18h2"/>',
+ link:'<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
+ card:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M7 15h4"/>',
+ send:'<path d="M4 12l16-8-6 16-3-7z"/>',
+ image:'<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-8 9"/>',
+ road:'<path d="M7 3l-3 18M17 3l3 18M12 4v3M12 11v3M12 18v3"/>',
+ siren:'<path d="M5 18h14v3H5zM7 18a5 5 0 0 1 10 0M12 3v3M4 7l2 2M20 7l-2 2"/>',
+ user2:'<circle cx="12" cy="8" r="4"/><path d="M5 21v-1a7 7 0 0 1 14 0v1"/>',
+};
+const ic=(n,s=22)=>`<svg class="ic" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${I[n]}</svg>`;
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+// ---------- Catálogos ----------
+// Piloto: Buenaventura → Bogotá y Cali. Coordenadas aproximadas, solo demostración.
+const PLACES={
+ SPB:{name:'Sociedad Portuaria de Buenaventura',short:'Sociedad Portuaria',city:'Buenaventura',cc:'BUN',lat:3.8876,lng:-77.0760,x:60,y:196},
+ SPA:{name:'Sociedad Portuaria Aguadulce',short:'Aguadulce',city:'Buenaventura',cc:'BUN',lat:3.8848,lng:-77.0627,x:62,y:194},
+ TCB:{name:'Terminal de Contenedores de Buenaventura',short:'TCBuen',city:'Buenaventura',cc:'BUN',lat:3.8890,lng:-77.0792,x:58,y:198},
+ BOG:{name:'Bodega Fontibón, Bogotá',city:'Bogotá',cc:'BOG',lat:4.6782,lng:-74.1469,x:214,y:152,patio:'Patio de naviera, Fontibón (Bogotá)'},
+ CLO:{name:'Bodega Yumbo, Cali',city:'Cali',cc:'CLO',lat:3.5833,lng:-76.4950,x:91,y:213,patio:'Patio de naviera, Yumbo (Cali)'},
+};
+const ORIGINS=['SPB','SPA','TCB'], DESTS=['BOG','CLO'];
+const MAPCITIES=[{c:'Buenaventura',x:60,y:196,dx:-3,dy:-9,a:'start',cc:'BUN'},{c:'Cali',x:91,y:213,dx:7,dy:4,a:'start',cc:'CLO'},{c:'Bogotá',x:214,y:152,dx:7,dy:4,a:'start',cc:'BOG'},{c:'Medellín',x:120,y:126,dx:7,dy:4,a:'start'},{c:'Barranquilla',x:150,y:31,dx:7,dy:4,a:'start'},{c:'Cartagena',x:112,y:45,dx:-7,dy:4,a:'end'}];
+const KM={'BUN-BOG':510,'BUN-CLO':120};
+const CT={'20ST':{label:"20' Standard",short:"20'",rate:6200,len:.62},'40ST':{label:"40' Standard",short:"40'",rate:7400,len:1},'40HC':{label:"40' High Cube",short:"40' HC",rate:7900,len:1,hc:true}};
+// Cierre nocturno de la vía Buga–Buenaventura (reportado por Analdex tras el sismo del 10-ago-2026). Confirmar estado actual.
+const CLOSURE={on:true,from:20,to:6};
+const GEO=0.3; // radio de geocerca en km
+const COMM=0.10; // comisión de la plataforma
+const WAIT={free:3,rate:90000}; // horas libres de espera en bodega y tarifa por hora (supuesto)
+const DRIVERS=[
+ {id:'d1',name:'Andrés Molina',carrier:'Transportes Ceiba del Pacífico',rating:4.9,trips:312,plate:'TBN-482',vehicle:'Tractocamión 2019, 3 ejes',factor:1.0,speed:55,tag:'Mejor calificado',phone:'300 000 0482',dist:9},
+ {id:'d2',name:'Yesenia Ruiz',carrier:'Ruta Andina Logística',rating:4.7,trips:198,plate:'TBN-317',vehicle:'Tractocamión 2017, 2 ejes',factor:0.92,speed:50,tag:'Menor precio',phone:'300 000 0317',dist:18},
+ {id:'d3',name:'Hernán Quintero',carrier:'Cargas El Alcaraván',rating:4.8,trips:540,plate:'TBN-905',vehicle:'Tractocamión 2021, 3 ejes',factor:1.07,speed:60,tag:'Más cercano al puerto',phone:'300 000 0905',dist:4},
+];
+const CLIENT={name:'Laura Pineda',company:'Comercializadora Brisa Atlántica S.A.S.',nit:'900.000.123-4',email:'laura@brisa-atlantica.example',phone:'301 000 0000'};
+const STEPS=['SOLICITADO','ASIGNADO','EN_PUERTO','RECOGIDO','EN_TRANSITO','ENTREGADO','DEVUELTO'];
+const ST={
+ SOLICITADO:{label:'Solicitado',hint:'Solicitud creada'},
+ ASIGNADO:{label:'Asignado',hint:'Un conductor acepta el servicio'},
+ EN_PUERTO:{label:'En puerto',hint:'Llegada al terminal, con selfie'},
+ RECOGIDO:{label:'Recogido',hint:'Contenedor cargado, con PIN de retiro'},
+ EN_TRANSITO:{label:'En tránsito',hint:'Rumbo al destino'},
+ ENTREGADO:{label:'Entregado',hint:'Entrega con PIN, foto y geocerca'},
+ DEVUELTO:{label:'Vacío devuelto',hint:'Contenedor vacío entregado con comprobante'},
+ CANCELADO:{label:'Cancelado',hint:''},
+};
+const EVL={SELFIE:'Selfie de llegada',RECOGIDA:'Contenedor recogido',ENTREGA:'Entrega',VACIO:'Devolución del vacío'};
+const SEG={
+ todo:{name:'Todo riesgo, deducible bajo',rate:.004,ded:'1 %',cov:'Pérdida total o parcial por robo, volcamiento, colisión, incendio y daños.'},
+ todo5:{name:'Todo riesgo, deducible alto',rate:.0028,ded:'5 %',cov:'Misma cobertura con prima menor y deducible más alto.'},
+ nom:{name:'Riesgos nombrados',rate:.002,ded:'10 %',cov:'Solo robo, volcamiento, colisión e incendio.'},
+};
+const PAYM=[['card','Tarjeta de crédito o débito','card'],['pse','PSE (débito desde tu banco)','bank'],['nequi','Nequi','phone'],['qr','Código QR','qr']];
+const KYC=[ // documento, básico, completo
+ ['RUT (menor a 30 días)',1,1],['Cámara de Comercio (menor a 30 días)',1,1],['Cédula del representante legal, con selfie',1,1],
+ ['Autorización de tratamiento de datos (Ley 1581), firma electrónica',1,1],['Acuerdo de seguridad, firma electrónica',1,1],
+ ['Conocimiento del cliente (Circular 170)',1,1],['Visita virtual: fotos geolocalizadas de fachada y oficina',1,0],['Visita virtual: videollamada con el representante',0,1],
+ ['Consulta automática en listas restrictivas',1,1],['Referencias comercial y bancaria',0,1],['Estados financieros y declaración de renta',0,1]];
+
+// ---------- Utilidades ----------
+const now=()=>Date.now(); const MIN=60e3, HR=36e5, DAY=864e5;
+const cop=n=>'$'+Math.round(n).toLocaleString('es-CO');
+const fmtT=t=>new Date(t).toLocaleTimeString('es-CO',{hour:'numeric',minute:'2-digit'});
+const fmtD=t=>new Date(t).toLocaleDateString('es-CO',{day:'numeric',month:'short'});
+const fmtDT=t=>fmtD(t)+', '+fmtT(t);
+const ago=t=>{const s=Math.max(0,Math.round((now()-t)/1000)); return s<60?`hace ${s} s`:s<5400?`hace ${Math.round(s/60)} min`:`hace ${Math.round(s/3600)} h`;};
+const dur=h=>{const hh=Math.floor(h), mm=Math.round((h-hh)*60); return hh?`${hh} h ${mm} min`:`${mm} min`;};
+const rk=t=>PLACES[t.o].cc+'-'+PLACES[t.d].cc;
+const kmOf=t=>KM[rk(t)];
+const isoDate=d=>new Date(d).toISOString().slice(0,10);
+const initials=n=>n.split(' ').map(w=>w[0]).slice(0,2).join('');
+const drv=id=>DRIVERS.find(d=>d.id===id)||DRIVERS[0];
+const roundK=n=>Math.round(n/10000)*10000;
+const pinOf=(id,k)=>String(1000+((parseInt(id.slice(3))*(k?6151:4871))%9000));
+
+// ISO 6346: dígito de control del número de contenedor
+function isoCheck(code){const m={};let v=10;for(const ch of 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'){if(v%11===0)v++;m[ch]=v;v++;}
+ let s=0;for(let i=0;i<10;i++){const c=code[i];s+=(/\d/.test(c)?+c:m[c])*Math.pow(2,i);}return (s%11)%10;}
+function checkContainer(raw){const s=String(raw||'').replace(/[\s-]/g,'').toUpperCase();
+ if(!s) return {ok:false,msg:'Escribe el número del contenedor'};
+ if(!/^[A-Z]{3}[UJZ]\d{7}$/.test(s)) return {ok:false,msg:'Formato: 4 letras + 7 dígitos (ej. TBNU4829151)'};
+ const d=isoCheck(s.slice(0,10)); return d===+s[10]?{ok:true,msg:'Número válido según ISO 6346'}:{ok:false,msg:`El dígito de control no coincide (debería ser ${d})`};}
+function genContainer(seed){const six=String(100000+((seed*7919)%900000)).slice(0,6);const b='TBNU'+six;return b+isoCheck(b);}
+
+// ---------- Tarifas, ETA y cierre nocturno ----------
+function fleteBase(t){return Math.max(1200000,roundK(kmOf(t)*CT[t.ct].rate));}
+const vacioFee=t=>t.vacio==='patio'?420000:roundK(kmOf(t)*1800);
+const plazoFee=t=>t.plazo==='expres'?300000:0;
+function prima(t){return Math.max(150000,Math.round(t.seg.cif*SEG[t.seg.plan].rate/1000)*1000);}
+function quote(t,d){const flete=roundK(fleteBase(t)*d.factor),vac=vacioFee(t),pz=plazoFee(t),pr=prima(t),serv=flete+vac+pz,com=Math.round(serv*COMM);
+ return {flete,vac,pz,pr,serv,total:serv+pr,com,neto:serv-com};}
+const etaPortH=d=>d.dist/35;
+function arriveAfter(startMs,driveH){let t=startMs,left=driveH*HR;if(!CLOSURE.on)return t+left;
+ for(let i=0;i<30;i++){const d=new Date(t),h=d.getHours()+d.getMinutes()/60;
+  if(h>=CLOSURE.from||h<CLOSURE.to){const n=new Date(t);if(h>=CLOSURE.from)n.setDate(n.getDate()+1);n.setHours(CLOSURE.to,0,0,0);t=n.getTime();continue;}
+  const end=new Date(t);end.setHours(CLOSURE.from,0,0,0);const avail=end.getTime()-t;if(left<=avail)return t+left;left-=avail;t=end.getTime();}
+ return t+left;}
+function tripEta(t,d){const drive=kmOf(t)/d.speed,start=now()+(etaPortH(d)+1.5)*HR,arr=arriveAfter(start,drive);return {arrive:arr,wait:(arr-start)/HR-drive>0.05};}
+function offersFor(t){return DRIVERS.filter(d=>S.online[d.id]).map(d=>({driverId:d.id,q:quote(t,d),eta:tripEta(t,d),etaPort:etaPortH(d)})).sort((a,b)=>a.etaPort-b.etaPort);}
+
+// ---------- Geometría del mapa ilustrativo (360x240) ----------
+function routePts(o,d){const a=PLACES[o],b=PLACES[d],dx=b.x-a.x,dy=b.y-a.y,L=Math.hypot(dx,dy)||1,nx=-dy/L,ny=dx/L,pts=[];
+ for(let i=0;i<=12;i++){const t=i/12;const bend=Math.sin(t*Math.PI)*L*.11+(i&&i<12?Math.sin(t*Math.PI*3)*5:0);pts.push([a.x+dx*t+nx*bend,a.y+dy*t+ny*bend]);}return pts;}
+function pointAt(pts,p){const seg=[];let tot=0;for(let i=1;i<pts.length;i++){const l=Math.hypot(pts[i][0]-pts[i-1][0],pts[i][1]-pts[i-1][1]);seg.push(l);tot+=l;}
+ let target=Math.min(Math.max(p,0),1)*tot;for(let i=0;i<seg.length;i++){if(target<=seg[i]||i===seg.length-1){const r=seg[i]?Math.min(target/seg[i],1):0,A=pts[i],B=pts[i+1];
+ return {x:A[0]+(B[0]-A[0])*r,y:A[1]+(B[1]-A[1])*r,ang:Math.atan2(B[1]-A[1],B[0]-A[0])*180/Math.PI};}target-=seg[i];}}
+function prog(t){
+ if(t.status==='DEVUELTO')return t.vacio==='puerto'?0:1;
+ if(t.status==='ENTREGADO')return t.vacio==='puerto'?Math.max(0,t.toVacio/t.vacStart):1;
+ if(t.status==='EN_TRANSITO')return t.progress;return 0;}
+function geoAt(t){const a=PLACES[t.o],b=PLACES[t.d],p=prog(t);return {lat:a.lat+(b.lat-a.lat)*p,lng:a.lng+(b.lng-a.lng)*p};}
+const tracking=t=>['ASIGNADO','EN_PUERTO','RECOGIDO','EN_TRANSITO','ENTREGADO'].includes(t.status)&&t.accepted;
+const isDone=t=>t.status==='DEVUELTO'||t.status==='CANCELADO';
+// Geocerca: distancia (km) al próximo punto de control
+function distTo(t){switch(t.status){case 'ASIGNADO':return t.toPort;case 'EN_TRANSITO':return kmOf(t)*(1-t.progress);case 'ENTREGADO':return t.toVacio;default:return 0;}}
+const inZone=t=>distTo(t)<=GEO+1e-6;
+const kmTxt=k=>k<1?`${Math.round(k*1000)} m`:`${k.toFixed(1).replace('.',',')} km`;
+
+// ---------- Estado (store en memoria) ----------
+let S;
+function newTrip(o){return Object.assign({status:'SOLICITADO',progress:0,events:[],evidences:[],offer:null,accepted:false,confirmed:false,lastGps:null,rating:0,notes:'',weight:'18500',
+ review:{doc:'ok',driver:'confirmado',pay:'ok'},adminApproved:true,contact:[],chat:[],vacio:'patio',plazo:'consolidado',seg:{plan:'todo5',cif:150000000},pay:null,
+ toPort:0,portStep:0,toVacio:0,vacStart:1,vacStep:0,pinSent:false,cita:null,silent:false,mine:false},o);}
+function seed(){
+ const n=now();
+ const past=newTrip({id:'CG-1031',mine:true,client:CLIENT.company,o:'SPB',d:'BOG',ct:'20ST',date:isoDate(n-4*DAY),cno:genContainer(31),bl:'BUN2609871',seal:'PR-66012',weight:'14200',status:'DEVUELTO',progress:1,accepted:true,confirmed:true,rating:5,driverId:'d1',vacio:'patio',cita:n-4*DAY});
+ past.pins={pickup:pinOf(past.id,0),delivery:pinOf(past.id,1)};
+ past.offer={driverId:'d1',q:quote(past,DRIVERS[0])};
+ past.pay={method:'PSE',status:'liberado',amount:past.offer.q.total,at:n-5*DAY};
+ const ev=(s,t,by,pl,e)=>past.events.push({status:s,at:t,by,lat:pl.lat,lng:pl.lng,ev:e||null});
+ const b=PLACES.SPB,g=PLACES.BOG;
+ ev('SOLICITADO',n-5*DAY,CLIENT.name,b);ev('ASIGNADO',n-5*DAY+2*HR,'Andrés Molina',b);ev('EN_PUERTO',n-4*DAY,'Andrés Molina',b,'SELFIE');ev('RECOGIDO',n-4*DAY+2*HR,'Andrés Molina',b,'RECOGIDA');
+ ev('EN_TRANSITO',n-4*DAY+2.5*HR,'Andrés Molina',b);ev('ENTREGADO',n-3*DAY-5*HR,'Andrés Molina',g,'ENTREGA');ev('DEVUELTO',n-3*DAY-2*HR,'Andrés Molina',g,'VACIO');
+ past.evidences=[{type:'SELFIE',at:n-4*DAY,lat:b.lat,lng:b.lng,acc:9,seed:2},{type:'RECOGIDA',at:n-4*DAY+2*HR,lat:b.lat,lng:b.lng,acc:7,seed:5,extra:`Contenedor ${past.cno}, precinto PR-66012`},{type:'ENTREGA',at:n-3*DAY-5*HR,lat:g.lat,lng:g.lng,acc:11,seed:8,extra:'Recibe: Mauricio Leal (bodega). PIN validado'},{type:'VACIO',at:n-3*DAY-2*HR,lat:g.lat,lng:g.lng,acc:8,seed:3,extra:'Comprobante del patio EIR-55102'}];
+ const svc=[
+  newTrip({id:'CG-1038',client:'Textiles Brumario S.A.S.',o:'TCB',d:'CLO',ct:'40HC',date:isoDate(n+DAY),cno:genContainer(38),bl:'BUN2610233',seal:'PR-70455',weight:'21300',vacio:'puerto',plazo:'expres',seg:{plan:'todo',cif:320000000}}),
+  newTrip({id:'CG-1040',client:'Importadora Garzal Ltda.',o:'SPA',d:'BOG',ct:'20ST',date:isoDate(n+2*DAY),cno:genContainer(40),bl:'BUN2610377',seal:'PR-70981',weight:'16800'}),
+  newTrip({id:'CG-1041',client:'Ferretería Pozo Azul S.A.S.',o:'SPB',d:'BOG',ct:'40ST',date:isoDate(n+DAY),cno:genContainer(41),bl:'BUN2610402',seal:'PR-71120',weight:'19750',vacio:'puerto'}),
+ ];
+ svc.forEach(t=>{t.pins={pickup:pinOf(t.id,0),delivery:pinOf(t.id,1)};t.events.push({status:'SOLICITADO',at:n-3*HR,by:t.client,lat:PLACES[t.o].lat,lng:PLACES[t.o].lng,ev:null});});
+ return {
+  mode:'client',nav:{client:[{s:'splash'}],driver:[{s:'d-login'}]},
+  clientLogged:false,driverLogged:false,driverId:'d1',nextId:1043,online:{d1:true,d2:true,d3:true},
+  trips:[past,...svc],
+  form:freshForm(1043),formErr:'',draft:freshDraft(),
+  svcFilter:'todos',detailTab:'hist',earn:'mes',notices:[],
+  clients:{
+   [CLIENT.company]:{nit:CLIENT.nit,contact:CLIENT.name,email:CLIENT.email,phone:CLIENT.phone,verified:'pendiente',level:'basico',size:'Importador mediano',integ:{}},
+   'Textiles Brumario S.A.S.':{nit:'900.000.456-1',contact:'Óscar Reyes',email:'logistica@brumario.example',phone:'302 000 0001',verified:'ok',level:'completo',size:'Importador grande',integ:{hubspot:true,excel:true}},
+   'Importadora Garzal Ltda.':{nit:'900.000.789-2',contact:'Diana Prado',email:'diana@garzal.example',phone:'302 000 0002',verified:'ok',level:'basico',size:'Pequeño comprador',integ:{sheets:true}},
+   'Ferretería Pozo Azul S.A.S.':{nit:'900.000.321-5',contact:'Camilo Ruiz',email:'compras@pozoazul.example',phone:'302 000 0003',verified:'ok',level:'basico',size:'Pequeño comprador',integ:{}},
+  },
+  tickets:[
+   {id:'T-208',tripId:'CG-1040',from:'cliente',who:'Diana Prado (Importadora Garzal)',type:'Cambio de horario',text:'¿Se puede recoger antes del mediodía? La bodega cierra a las 4 p. m.',at:n-50*MIN,status:'abierto',msgs:[]},
+   {id:'T-201',tripId:'CG-1031',from:'conductor',who:'Andrés Molina',type:'Comentario de tarifa',text:'La tarifa no cubre la espera en el terminal. ¿Se puede revisar?',at:n-5*DAY+3*HR,status:'resuelto',msgs:[{by:BRAND,text:'Recibido, Andrés. Lo revisamos con el cliente.',at:n-5*DAY+3.2*HR,staff:true}]},
+  ],
+  nextTicket:209,alerts:[],nextAlert:1,
+  roads:[
+   {id:'R3',type:'Cierre',where:'Buga – Buenaventura',text:'Cierre total nocturno de 8:00 p. m. a 6:00 a. m.',by:BRAND+' (aviso oficial)',at:n-2*DAY,votes:14},
+   {id:'R2',type:'Congestión',where:'Entrada al terminal, Buenaventura',text:'Fila de unas 2 horas para ingresar.',by:'Yesenia Ruiz',at:n-25*MIN,votes:6},
+   {id:'R1',type:'Restricción',where:'Cajamarca (Calarcá – Cajamarca)',text:'Un solo carril habilitado, tiempos de espera largos.',by:'Hernán Quintero',at:n-3*HR,votes:9},
+  ],
+  nextRoad:4,
+  admin:{sec:'resumen',sel:null,tf:'abiertos',ic:CLIENT.company},
+ };
+}
+function freshForm(id){return {o:'SPB',d:'BOG',ct:'40ST',date:isoDate(now()+DAY),cno:genContainer(id),bl:'BUN'+(2610000+id),seal:'PR-'+(70000+id*3),weight:'18500',notes:'',doc:null,vacio:'patio',plazo:'consolidado',plan:'todo5',cif:'150000000'};}
+function freshDraft(){return {photo:null,selfie:null,selfieBad:false,cno:'',seal:'',pin:'',receiver:'',comment:'',eir:'',err:''};}
+const trip=id=>S.trips.find(t=>t.id===id);
+const ACTIVE=['ASIGNADO','EN_PUERTO','RECOGIDO','EN_TRANSITO','ENTREGADO'];
+const activeTripOf=did=>S.trips.find(t=>t.accepted&&t.driverId===did&&ACTIVE.includes(t.status));
+const activeDriverTrip=()=>activeTripOf(S.driverId);
+const lastDriverTrip=()=>activeDriverTrip()||[...S.trips].reverse().find(t=>t.accepted&&t.driverId===S.driverId&&t.id!=='CG-1031');
+const myTrips=()=>S.trips.filter(t=>t.mine);
+const dOf=t=>drv(t.offer?.driverId||t.driverId);
+const named=t=>t.accepted&&t.adminApproved; // el cliente ve nombre y placa solo tras la aprobación
+
+function pushEvent(t,status,by,evType){const g=geoAt(t);t.status=status;t.events.push({status,at:now(),by,lat:g.lat,lng:g.lng,ev:evType||null});}
+function notify(to,text){S.notices.push({to,text,seen:false});}
+function notifyClient(t,text){if(t.mine)notify('client',text);}
+function addAlert(t,kind,text,extra={}){const g=geoAt(t);const a=Object.assign({id:'A-'+(S.nextAlert++),tripId:t.id,kind,text,at:now(),status:'abierta',by:dOf(t).name,lat:g.lat,lng:g.lng},extra);S.alerts.push(a);notify('admin',`${ALK[kind][0]}: ${t.id}`);return a;}
+const ALK={PANICO:['Emergencia del conductor','bad'],DESVIO:['Desvío de ruta','warn'],PARADA:['Parada no programada','warn'],SIN_SENAL:['GPS sin señal','warn'],SELFIE:['Selfie no coincide','bad'],CANCELACION:['Cancelación por aprobar','warn'],INCIDENCIA:['Incidencia','bad']};
+
+// ---------- Navegación ----------
+const stack=()=>S.nav[S.mode];
+const cur=()=>stack()[stack().length-1];
+function go(s,p){stack().push({s,p:p||{}});render(true);}
+function back(){if(stack().length>1){stack().pop();render(true);}}
+function resetTo(arr){S.nav[S.mode]=arr.map(x=>typeof x==='string'?{s:x,p:{}}:x);render(true);}
+
+// ---------- Componentes ----------
+function header(title,{back:b=true,sub='',right=''}={}){
+ return `<header class="hdr">${b?`<button class="iconbtn" data-a="back" aria-label="Volver">${ic('back')}</button>`:'<span style="width:6px"></span>'}<div class="t">${title}${sub?`<small>${sub}</small>`:''}</div>${right}</header>`;}
+const routeLine=(t,size)=>`<div class="route" ${size?`style="font-size:${size}px"`:''}>${PLACES[t.o].city}<span class="arrow">→</span>${PLACES[t.d].city}</div>`;
+function statusBadge(t){
+ if(t.status==='CANCELADO') return `<span class="badge b-bad">Cancelado</span>`;
+ if(t.status==='SOLICITADO') return t.confirmed?(t.adminApproved?`<span class="badge b-warn">Esperando conductor</span>`:`<span class="badge b-warn">En revisión</span>`):(t.offer?`<span class="badge b-warn">Por confirmar</span>`:`<span class="badge b-warn">Recibiendo ofertas</span>`);
+ if(t.status==='DEVUELTO') return `<span class="badge b-ok">${ic('check',14)}Completado</span>`;
+ return `<span class="badge b-brand"><span class="dotlive"></span>${ST[t.status].label}</span>`;}
+function miniSteps(t){const i=t.status==='CANCELADO'?-1:STEPS.indexOf(t.status);return `<div class="mini-steps ${t.status==='DEVUELTO'?'ok':''}" aria-label="Paso ${i+1} de 7">${STEPS.map((_,k)=>`<i class="${k<=i?'on':''}"></i>`).join('')}</div>`;}
+function stepper(t){const idx=STEPS.indexOf(t.status);
+ return `<ol class="stepper">${STEPS.map((s,i)=>{const e=[...t.events].reverse().find(x=>x.status===s);
+  let cls=i<idx?'done':i===idx?'now':'todo'; if(i===idx&&s==='DEVUELTO')cls='final';
+  return `<li class="${cls}"><span class="dot">${(i<idx||cls==='final')?ic('check',15):''}</span><div><b>${ST[s].label}</b><small>${e?fmtDT(e.at):ST[s].hint}</small></div></li>`;}).join('')}</ol>`;}
+function contSVG(ct,cls='cont'){const c=CT[ct];const w=c.len===1?70:44,h=c.hc?26:22,x=(74-w)/2,y=28-h;
+ let ribs='';for(let k=x+5;k<x+w-3;k+=5)ribs+=`<line x1="${k}" y1="${y+3}" x2="${k}" y2="${y+h-3}"/>`;
+ return `<svg class="${cls}" viewBox="0 0 74 30" aria-hidden="true"><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><g stroke="currentColor" stroke-width="1" opacity=".55">${ribs}</g></svg>`;}
+function photoSVG(type,seed,at,lat,lng){const hues={SELFIE:[205,215],RECOGIDA:[28,200],ENTREGA:[150,210],VACIO:[270,215],INCIDENCIA:[0,215],CHAT:[190,215]};const [h1,h2]=hues[type]||[210,220];
+ const id='g'+type+seed+Math.floor(Math.random()*1e5);
+ const body=type==='SELFIE'?`<circle cx="80" cy="46" r="20" fill="hsl(28 45% 62%)"/><path d="M38 100c0-24 18-34 42-34s42 10 42 34z" fill="hsl(${h1} 55% 40%)"/>`
+  :`<rect x="${22+seed%4*4}" y="40" width="108" height="46" rx="2" fill="hsl(${h1} 62% 46%)"/>${Array.from({length:17},(_,k)=>`<line x1="${28+seed%4*4+k*6}" y1="43" x2="${28+seed%4*4+k*6}" y2="83" stroke="rgba(0,0,0,.18)" stroke-width="1.4"/>`).join('')}`;
+ return `<svg class="photo" viewBox="0 0 160 120" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+ <defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="hsl(${h2} 35% 78%)"/><stop offset="1" stop-color="hsl(${h2} 25% 52%)"/></linearGradient></defs>
+ <rect width="160" height="120" fill="url(#${id})"/><rect y="${type==='SELFIE'?100:84}" width="160" height="36" fill="hsl(${h2} 10% 38%)"/>${body}
+ <rect x="0" y="104" width="160" height="16" fill="rgba(0,0,0,.55)"/><text x="6" y="115" font-size="8" fill="#fff" font-family="ui-monospace,monospace">${fmtT(at)} ${lat.toFixed(4)}, ${lng.toFixed(4)}</text></svg>`;}
+const evTile=e=>`<div class="evtile has"><div class="ph">${photoSVG(e.type,e.seed,e.at,e.lat,e.lng)}</div><div class="meta"><b>${EVL[e.type]||'Evidencia'}</b>${fmtDT(e.at)} · ±${e.acc} m${e.extra?`<br>${esc(e.extra)}`:''}</div></div>`;
+
+function mapSVG(t,h=230,fit='slice'){
+ const pts=routePts(t.o,t.d),p=prog(t),pos=pointAt(pts,p),d='M'+pts.map(q=>q[0].toFixed(1)+' '+q[1].toFixed(1)).join(' L');
+ const oc=PLACES[t.o].cc,dc=PLACES[t.d].cc;
+ const cities=MAPCITIES.map(c=>{const on=c.cc===oc||c.cc===dc;
+  return `<circle cx="${c.x}" cy="${c.y}" r="${on?4.5:3}" class="${on?'m-city-on':'m-city'}"/><text x="${c.x+c.dx}" y="${c.y+c.dy}" text-anchor="${c.a}" class="m-label ${on?'on':''}">${c.c}</text>`;}).join('');
+ return `<div class="map" style="height:${h}px"><svg viewBox="0 0 360 240" preserveAspectRatio="xMidYMid ${fit}" role="img" aria-label="Mapa ilustrativo de la ruta ${PLACES[t.o].city} a ${PLACES[t.d].city}">
+ <path class="m-water" d="M0 0H360V6C320 10 290 4 255 12C220 20 190 14 165 20C150 24 140 31 125 37C110 43 95 47 80 55C60 65 40 67 20 74L0 80Z"/>
+ <path class="m-water" d="M0 80L20 74C28 90 30 110 34 130C38 150 46 170 49 190C51 210 45 226 41 240H0Z"/>
+ <text x="262" y="9" class="m-sea">Mar Caribe</text><text x="14" y="168" class="m-sea" transform="rotate(-78 14 168)">Océano Pacífico</text>
+ <path class="m-ridge" d="M92 72C102 112 112 152 100 222"/><path class="m-ridge" d="M132 82C142 122 152 162 152 232"/><path class="m-ridge" d="M200 62C205 102 222 142 244 202"/>
+ <path class="m-river" d="M152 29C160 61 168 91 176 121C182 146 190 171 197 204"/>
+ <path class="m-route-base" d="${d}"/>
+ <path class="m-route-done" data-live="trail" d="${d}" pathLength="1000" stroke-dasharray="1000" stroke-dashoffset="${(1000*(1-p)).toFixed(1)}"/>
+ ${cities}
+ <g class="m-truck-g" data-live="truck" style="transform:translate(${pos.x.toFixed(1)}px,${pos.y.toFixed(1)}px)"><circle r="11" class="m-halo"/><g data-live="truckrot" transform="rotate(${pos.ang.toFixed(1)})"><rect x="-8" y="-5" width="13" height="10" rx="2" class="m-truck"/><path d="M5 -4 L10 -2 L10 2 L5 4 Z" class="m-truck"/></g></g>
+ </svg><span class="map-note">Mapa ilustrativo, sin datos reales</span></div>`;}
+
+function etaInfo(t){const d=dOf(t);
+ if(t.status==='ASIGNADO'){const h=t.toPort/Math.min(d.speed,40);return {km:t.toPort,h,arrive:now()+h*HR,wait:false};}
+ const km=kmOf(t)*(1-prog(t)),drive=km/d.speed,arr=arriveAfter(now(),drive),h=(arr-now())/HR;return {km,h,arrive:arr,wait:h-drive>0.05};}
+function clientHeadline(t){const d=dOf(t),e=etaInfo(t);
+ switch(t.status){
+  case 'CANCELADO':return {big:'Cancelado',small:t.cancel?`${t.cancel.by}. ${t.cancel.note}`:''};
+  case 'SOLICITADO':return t.confirmed&&!t.adminApproved?{big:'En revisión',small:`${BRAND} valida tus documentos, el pago y confirma al conductor`}:t.confirmed?{big:'Buscando conductor',small:'Tu pago está retenido hasta la entrega'}:{big:'Ofertas listas',small:'Elige un camión para continuar'};
+  case 'ASIGNADO':return {big:'En camino al puerto',small:`A ${kmTxt(t.toPort)} del terminal de ${PLACES[t.o].short}`};
+  case 'EN_PUERTO':return {big:'En el puerto',small:'El conductor verificó su identidad con selfie'};
+  case 'RECOGIDO':return {big:'Contenedor recogido',small:'Retiro validado con PIN y foto del precinto'};
+  case 'EN_TRANSITO':return {big:dur(e.h),small:`Llega hacia las ${fmtT(e.arrive)}, faltan ${Math.round(e.km)} km${e.wait?'. Incluye el cierre nocturno de la vía':''}`};
+  case 'ENTREGADO':return {big:'Entregado',small:t.vacio==='patio'?'El conductor devuelve el vacío al patio de la naviera':'El conductor devuelve el vacío al puerto'};
+  case 'DEVUELTO':return {big:'Servicio completo',small:'Vacío devuelto. Comprobante disponible'};}}
+
+function logoMark(s){return `<svg width="${s}" height="${s}" viewBox="0 0 64 64" aria-hidden="true"><rect x="6" y="34" width="40" height="18" rx="3" fill="none" stroke="currentColor" stroke-width="3.5"/><rect x="18" y="12" width="40" height="18" rx="3" fill="var(--signal)" stroke="var(--signal)" stroke-width="3.5"/><path d="M14 38v10M22 38v10M30 38v10M38 38v10" stroke="currentColor" stroke-width="2.4"/><path d="M26 16v10M34 16v10M42 16v10M50 16v10" stroke="var(--brand)" stroke-width="2.4"/></svg>`;}
+const rvBadge=st=>{const r=RV[st]||RV.ok;return `<span class="badge ${r[0]}">${st==='ok'||st==='confirmado'||!RV[st]?ic('check',13):''}${r[1]}</span>`;};
+const RV={pendiente:['b-warn','Pendiente'],ok:['b-ok','Validado'],rechazado:['b-bad','Rechazado'],contactado:['b-brand','Contactado'],confirmado:['b-ok','Confirmado']};
+const KYCLIM=300e6; // tope de valor asegurado por operación en nivel básico (supuesto)
+const vacLabel=t=>t.vacio==='patio'?PLACES[t.d].patio:`Puerto de ${PLACES[t.o].city}`;
+const sheetRoot=()=>document.getElementById(S.mode==='admin'?'admin-sheet':'sheet-root');
+function sheet(html){['toast-root','admin-toast'].forEach(i=>document.getElementById(i).innerHTML='');sheetRoot().innerHTML=`<div class="scrim" data-a="closeSheetBg"><div class="sheet" role="dialog" aria-modal="true"><div class="grab"></div>${html}</div></div>`;}
+function closeSheet(){document.getElementById('sheet-root').innerHTML='';document.getElementById('admin-sheet').innerHTML='';}
+let toastT;function toast(msg,icon='bell'){['toast-root','admin-toast'].forEach(i=>document.getElementById(i).innerHTML='');const r=document.getElementById(S.mode==='admin'?'admin-toast':'toast-root');r.innerHTML=`<div class="toast">${ic(icon,20)}<span>${msg}</span></div>`;clearTimeout(toastT);toastT=setTimeout(()=>r.innerHTML='',3600);}
+const cancelBtn=`<button class="btn btn-secondary" style="margin-top:8px" data-a="closeSheet">Cerrar</button>`;
+function threadHtml(k){const msgs=[{by:k.who,text:k.text,at:k.at},...k.msgs];
+ return `<div class="thread"><div class="row" style="justify-content:space-between"><b>${esc(k.type)}</b><span class="badge ${k.status==='abierto'?'b-warn':'b-ok'}">${k.status==='abierto'?'Abierto':'Resuelto'}</span></div>${msgs.map(m=>`<div class="msg ${m.staff?'staff':''}"><div class="faint">${esc(m.by)} · ${fmtDT(m.at)}</div>${esc(m.text)}</div>`).join('')}</div>`;}
+const logContact=(t,channel,withWho,text)=>t.contact.push({at:now(),channel,with:withWho,text});
+const rte=t=>`${PLACES[t.o].city} → ${PLACES[t.d].city}`;
+function liveMap(root,t){const pos=pointAt(routePts(t.o,t.d),prog(t));
+ const tr=document.querySelector(root+' [data-live="truck"]');if(tr)tr.style.transform=`translate(${pos.x.toFixed(1)}px,${pos.y.toFixed(1)}px)`;
+ const rot=document.querySelector(root+' [data-live="truckrot"]');if(rot)rot.setAttribute('transform',`rotate(${pos.ang.toFixed(1)})`);
+ const tl=document.querySelector(root+' [data-live="trail"]');if(tl)tl.setAttribute('stroke-dashoffset',(1000*(1-prog(t))).toFixed(1));}
+
+
+// ---------- Persistencia compartida entre app y admin (localStorage del mismo origen) ----------
+const SKEY='tudobenn_demo_v4';
+const SHARED=['trips','tickets','alerts','roads','clients','notices','online','susp','nextId','nextTicket','nextAlert','nextRoad'];
+function persist(){try{const o={};SHARED.forEach(k=>o[k]=S[k]);localStorage.setItem(SKEY,JSON.stringify({s:o}));}catch(e){}}
+function loadShared(){try{const r=localStorage.getItem(SKEY);if(!r)return false;const o=JSON.parse(r).s;SHARED.forEach(k=>{if(o[k]!==undefined)S[k]=o[k];});return true;}catch(e){return false;}}
+function sig(){return JSON.stringify([S.trips.map(t=>[t.id,t.status,t.accepted,t.adminApproved,t.pinSent,t.cancelReq,t.silent,t.chat.length,t.contact.length,t.evidences.length,t.pay&&t.pay.status,t.cita,t.review,t.offer&&t.offer.driverId,t.selfieOk,t.pinOverride]),S.alerts.map(a=>a.id+a.status),S.tickets.map(k=>k.id+k.status+k.msgs.length),Object.values(S.clients).map(c=>[c.verified,c.level,c.upgrade]),S.notices.length,S.roads.length,S.online]);}
+const A={
+ closeSheet(){closeSheet();},
+ closeSheetBg(_,el,e){if(e.target===el)closeSheet();},
+ fake(msg){toast(msg,'alert');},
+ copyLL(v){try{navigator.clipboard.writeText(v).then(()=>toast('Copiado','check'),()=>toast('Copia manual: '+v,'pin'));}catch(e){toast('Copia manual: '+v,'pin');}},
+ resetDemo(){const m=S.mode;S=seed();S.mode=m;if(m==='admin')S.nav={};persist();closeSheet();render(true);toast('Demo reiniciada','refresh');},
+};
+
+const clientOf=t=>S.clients[t.client]||{verified:'ok',nit:'—',contact:'—',phone:'—',email:'—',size:'—',level:'basico',integ:{}};
+const needsReview=t=>t.status==='SOLICITADO'&&t.confirmed&&!t.adminApproved;
+const overLimit=t=>clientOf(t).level==='basico'&&t.seg.cif>KYCLIM;
+const reviewReady=t=>clientOf(t).verified==='ok'&&t.review.doc==='ok'&&!!t.cita&&!!t.pay&&t.review.driver==='confirmado'&&!overLimit(t);
+const aTop=(t,sub,right='')=>`<div class="a-top row" style="justify-content:space-between;flex-wrap:wrap;align-items:flex-end"><div><h1 class="h1">${t}</h1>${sub?`<p class="muted" style="margin:4px 0 0">${sub}</p>`:''}</div>${right}</div>`;
+const openAlerts=()=>S.alerts.filter(a=>a.status==='abierta');
+function mdView(list,detail,hasSel,emptyMsg){return `<div class="md ${hasSel?'has-sel':''}"><div class="a-list">${list||`<div class="card empty" style="padding:24px">${emptyMsg}</div>`}</div><div class="a-detail">${hasSel?`<button class="linkbtn a-back" data-a="aBack">${ic('back',16)} Volver a la lista</button>${detail}`:'<div class="card empty">Selecciona un elemento de la lista para ver el detalle.</div>'}</div></div>`;}
+function contactLog(t){return `<div class="card"><div class="h3" style="margin-bottom:6px">Seguimiento y contactos</div><ul class="timeline">${t.contact.length?[...t.contact].reverse().map(x=>`<li><div class="row" style="justify-content:space-between;gap:12px"><b>${x.channel} · ${x.with}</b><span class="faint num">${fmtDT(x.at)}</span></div><div class="muted" style="font-size:14px">${esc(x.text)}</div></li>`).join(''):'<li class="faint">Aún no hay contactos ni notas registrados.</li>'}</ul>
+ <textarea class="input" id="note-${t.id}" placeholder="Nota interna de seguimiento: acuerdos, próximos pasos, novedades…"></textarea><div class="row" style="margin-top:8px;justify-content:flex-end"><button class="btn btn-secondary btn-sm" data-a="aNote" data-v="${t.id}">Guardar nota</button></div></div>`;}
+function personCard(t,role){const isD=role==='conductor',d=dOf(t),c=clientOf(t);
+ return `<div class="card"><div class="faint">${isD?'Conductor':'Cliente'}</div><div class="row" style="margin:6px 0 10px"><span class="avatar">${initials(isD?d.name:c.contact)}</span><div class="grow"><b>${isD?d.name:esc(c.contact)}</b><div class="faint">${isD?`${d.carrier} · ${d.plate}`:esc(t.client)}</div><div class="faint num">${isD?d.phone:c.phone}</div></div></div>
+ <div class="row" style="flex-wrap:wrap;gap:8px"><button class="btn btn-secondary btn-sm" data-a="aCall" data-v="${t.id}|${role}">${ic('phone',18)}Llamar</button><button class="btn btn-secondary btn-sm" data-a="aMsg" data-v="${t.id}|${role}">${ic('chat',18)}${isD?'Mensaje':'Notificar'}</button></div></div>`;}
+
+const ASEC=[['resumen','Resumen','home'],['solicitudes','Solicitudes','doc'],['viajes','Viajes','truck'],['alertas','Alertas','siren'],['bandeja','Bandeja','chat'],['clientes','Clientes','user'],['conductores','Conductores','shield'],['integraciones','Integraciones','swap']];
+function renderAdmin(nav){const a=S.admin,prev=document.querySelector('.a-main'),keep=!nav&&prev?prev.scrollTop:0;
+ const cnt={solicitudes:S.trips.filter(needsReview).length,alertas:openAlerts().length,bandeja:S.tickets.filter(k=>k.status==='abierto').length,clientes:Object.values(S.clients).filter(c=>c.verified==='pendiente'||c.upgrade).length};
+ document.getElementById('admin-view').innerHTML=`<nav class="a-side" aria-label="Secciones del panel"><div class="a-brand"><span style="color:var(--brand)">${logoMark(30)}</span>${BRAND}</div>
+ ${ASEC.map(([k,l,i])=>`<button class="a-nav" data-a="aSec" data-v="${k}" ${a.sec===k?'aria-current="page"':''}>${ic(i,20)}${l}${cnt[k]?`<span class="cnt">${cnt[k]}</span>`:''}</button>`).join('')}
+ <div class="faint" style="margin-top:auto;padding:12px">Operador: Admin demo<br>Panel web (prototipo)</div></nav><main class="a-main">${ASCR[a.sec]()}</main>`;
+ document.querySelector('.a-main').scrollTop=keep;}
+
+const ASCR={};
+ASCR.resumen=()=>{const rq=S.trips.filter(needsReview),act=S.trips.filter(t=>t.accepted&&ACTIVE.includes(t.status)),open=S.tickets.filter(k=>k.status==='abierto'),al=openAlerts(),pc=Object.entries(S.clients).filter(([,c])=>c.verified==='pendiente'||c.upgrade);
+ const kpi=(n,l,sec,bad)=>`<button class="card kpi" data-a="aSec" data-v="${sec}" ${bad&&n?'style="border-color:var(--bad)"':''}><b class="num" ${bad&&n?'style="color:var(--bad)"':''}>${n}</b><span>${l}</span></button>`;
+ const items=[...al.map(a=>({t:`${ALK[a.kind][0]} · ${a.tripId}`,s:esc(a.text),v:'alertas|'+a.id,b:'b-bad',l:'Alerta'})),
+  ...rq.map(t=>({t:`Revisar solicitud ${t.id}`,s:`${esc(t.client)} · ${rte(t)}`,v:'solicitudes|'+t.id,b:'b-warn',l:'Por revisar'})),
+  ...S.trips.filter(t=>t.status==='EN_PUERTO'&&!t.pinSent).map(t=>({t:`Autorizar retiro ${t.id}`,s:`${dOf(t).name} llegó al puerto. Enviar PIN de retiro`,v:'viajes|'+t.id,b:'b-warn',l:'Acción'})),
+  ...open.map(k=>({t:`${esc(k.type)} · ${k.tripId}`,s:esc(k.who),v:'bandeja|'+k.id,b:k.from==='cliente'?'b-brand':'b-warn',l:k.from==='cliente'?'Cliente':'Conductor'})),
+  ...pc.map(([nm,c])=>({t:c.upgrade?'Solicitud de nivel completo':'Verificar empresa',s:esc(nm),v:'clientes|'+nm,b:'b-warn',l:'Pendiente'}))];
+ return `${aTop('Resumen','Lo que requiere atención del equipo de operaciones')}
+ <div class="kpis">${kpi(rq.length,'Solicitudes por revisar','solicitudes')}${kpi(act.length,'Viajes activos','viajes')}${kpi(al.length,'Alertas abiertas','alertas',true)}${kpi(open.length,'Novedades abiertas','bandeja')}</div>
+ <div class="section-t">Requiere atención</div><div class="menu">${items.length?items.map(x=>`<button data-a="aOpen" data-v="${esc(x.v)}"><span class="grow"><b>${x.t}</b><br><span class="faint">${x.s}</span></span><span class="badge ${x.b}">${x.l}</span>${ic('chevron',18)}</button>`).join(''):'<div class="mi faint">Todo al día. No hay pendientes.</div>'}</div>`;};
+
+ASCR.solicitudes=()=>{const list=S.trips.filter(t=>t.mine&&t.status==='SOLICITADO'&&t.confirmed).sort((x,y)=>needsReview(y)-needsReview(x)),sel=S.admin.sel,t=sel&&trip(sel);
+ const item=x=>`<button class="card a-item ${sel===x.id?'sel':''}" data-a="aSel" data-v="${x.id}"><div class="row" style="justify-content:space-between"><b>${x.id}</b>${needsReview(x)?'<span class="badge b-warn">Por revisar</span>':'<span class="badge b-ok">Aprobada</span>'}</div><div class="faint">${esc(x.client)}</div><div style="margin-top:6px;font-weight:700">${rte(x)}</div><div class="faint">${CT[x.ct].label} · recogida ${fmtD(x.date+'T12:00')}</div></button>`;
+ return aTop('Solicitudes','Revisión en 4 pasos antes de asignar el servicio')+mdView(list.map(item).join(''),t&&t.offer?reviewDetail(t):'',!!t,'No hay solicitudes por revisar. Las que confirme y pague un cliente aparecen aquí.');};
+function reviewDetail(t){const c=clientOf(t),d=drv(t.offer.driverId),ck=checkContainer(t.cno),dup=S.trips.some(x=>x!==t&&x.cno===t.cno&&!isDone(x)),rd=reviewReady(t),q=t.offer.q,docsK=KYC.filter(k=>c.level==='completo'?k[2]:k[1]);
+ return `<div class="stack"><div class="card"><div class="row" style="justify-content:space-between;flex-wrap:wrap;gap:8px"><div><div class="faint">Solicitud ${t.id} · creada ${fmtDT(t.events[0].at)}</div><div class="h2">${rte(t)}</div><div class="muted">${CT[t.ct].label} · ${kmOf(t)} km · ${cop(q.total)} · recogida ${fmtD(t.date+'T12:00')}</div></div>${needsReview(t)?'<span class="badge b-warn">Por revisar</span>':'<span class="badge b-ok">Aprobada</span>'}</div></div>
+
+ <section class="card chk"><header><span class="n">1</span><div class="grow"><b>Verificar al cliente · nivel ${c.level}</b><div class="faint">${esc(t.client)} · NIT ${c.nit} · ${c.size}</div></div>${rvBadge(c.verified)}</header>
+ <div class="docs">${docsK.map(k=>`<div class="docrow">${ic('doc',18)}<span class="grow">${k[0]}</span><button class="linkbtn" data-a="fake" data-v="Visor de documentos (simulado)">Ver</button></div>`).join('')}</div>
+ <div class="faint">Contacto: ${esc(c.contact)} · ${c.phone} · ${c.email}</div>
+ ${c.verified!=='ok'?`<div class="row" style="margin-top:12px;flex-wrap:wrap"><button class="btn btn-ok btn-sm" data-a="aVerifyClient" data-v="${esc(t.client)}|ok">Verificar empresa</button><button class="btn btn-secondary btn-sm" data-a="aVerifyClient" data-v="${esc(t.client)}|rechazado">Rechazar</button></div>`:''}</section>
+
+ <section class="card chk"><header><span class="n">2</span><div class="grow"><b>Documentos, seguro y cita</b><div class="faint">${esc(t.doc?t.doc.name:'BL_'+t.bl+'.pdf')}</div></div>${rvBadge(t.review.doc)}</header>
+ <div class="docs">
+  <div class="docrow ${ck.ok?'good':'warn'}">${ic(ck.ok?'check':'alert',18)}<span class="grow">Contenedor ${esc(t.cno)}: ${ck.ok?'dígito de control ISO 6346 correcto':'dígito de control inválido'}</span></div>
+  <div class="docrow ${dup?'warn':'good'}">${ic(dup?'alert':'check',18)}<span class="grow">${dup?'Alerta: este contenedor tiene otra solicitud activa':'Sin solicitudes duplicadas para este contenedor'}</span></div>
+  <div class="docrow">${ic('doc',18)}<span class="grow">Revisa que el consignatario del BL ${esc(t.bl)} sea ${esc(t.client)} (NIT ${c.nit}) o que haya endoso o carta de autorización</span><button class="linkbtn" data-a="fake" data-v="Visor de documentos (simulado)">Ver BL</button></div>
+  <div class="docrow ${overLimit(t)?'warn':'good'}">${ic(overLimit(t)?'alert':'check',18)}<span class="grow">Seguro: ${SEG[t.seg.plan].name}, deducible ${SEG[t.seg.plan].ded}, valor ${cop(t.seg.cif)}, prima ${cop(q.pr)}${overLimit(t)?`. Excede el tope del nivel básico (${cop(KYCLIM)}): pide nivel completo`:''}</span></div>
+  <div class="docrow ${t.cita?'good':''}">${ic(t.cita?'check':'clock',18)}<span class="grow">Cita en el terminal ${PLACES[t.o].short}: ${t.cita?fmtDT(t.cita):'sin registrar'}</span>${t.cita?'':`<button class="linkbtn" data-a="aCita" data-v="${t.id}">Registrar cita</button>`}</div>
+ </div>
+ ${t.review.doc==='rechazado'?`<div class="errbox">Rechazado: ${esc(t.review.reason)}. Esperando el documento corregido del cliente.</div>`:''}
+ ${t.review.doc==='pendiente'?`<div class="row" style="flex-wrap:wrap"><button class="btn btn-ok btn-sm" data-a="aDoc" data-v="${t.id}">Validar documentos</button><button class="btn btn-secondary btn-sm" data-a="aRejectDoc" data-v="${t.id}">Rechazar</button></div>`:''}</section>
+
+ <section class="card chk"><header><span class="n">3</span><div class="grow"><b>Pago y fondos</b><div class="faint">El pago queda retenido hasta devolver el vacío</div></div>${rvBadge(t.pay?'ok':'pendiente')}</header>
+ <div class="docs"><div class="docrow ${t.pay?'good':'warn'}">${ic(t.pay?'check':'alert',18)}<span class="grow">${t.pay?`${cop(t.pay.amount)} retenidos por ${esc(t.pay.method)} (${fmtDT(t.pay.at)})`:'Sin pago registrado'}</span></div>
+ <div class="docrow">${ic('wallet',18)}<span class="grow">Comisión ${Math.round(COMM*100)} %: ${cop(q.com)} · al conductor: ${cop(q.neto)} al devolver el vacío</span></div></div></section>
+
+ <section class="card chk"><header><span class="n">4</span><div class="grow"><b>Confirmar con el conductor elegido</b><div class="faint">${d.name} · ${d.carrier}</div></div>${rvBadge(t.review.driver)}</header>
+ <div class="row" style="flex-wrap:wrap;gap:8px"><span class="badge b-ok">${ic('shield',13)}Documentos al día</span><span class="badge b-neutral">Placa ${d.plate}</span><span class="badge b-neutral">★ ${d.rating} · ${d.trips} viajes</span><span class="badge b-neutral">${activeTripOf(d.id)?'Con viaje activo':'Disponible'}</span></div>
+ <div class="row" style="margin-top:12px;flex-wrap:wrap"><button class="btn btn-secondary btn-sm" data-a="aCall" data-v="${t.id}|conductor">${ic('phone',18)}Llamar ${d.phone}</button><button class="btn btn-secondary btn-sm" data-a="aMsg" data-v="${t.id}|conductor">${ic('chat',18)}Mensaje</button>${t.review.driver!=='confirmado'?`<button class="btn btn-ok btn-sm" data-a="aDriverOk" data-v="${t.id}" ${t.review.driver==='pendiente'?'disabled':''}>Confirmó disponibilidad</button>`:''}</div>
+ ${t.review.driver==='pendiente'?'<p class="faint" style="margin:10px 0 0">Contacta al conductor (llamada o mensaje) para confirmar que puede tomar el servicio.</p>':''}</section>
+
+ ${needsReview(t)?`<div class="card row" style="justify-content:space-between;flex-wrap:wrap;gap:12px"><div><b>${rd?'Todo listo para aprobar':'Completa los 4 pasos para aprobar'}</b><div class="faint">Al aprobar, el servicio llega a la app del conductor y el cliente ve su nombre y placa.</div></div><button class="btn btn-primary btn-sm" data-a="aApprove" data-v="${t.id}" ${rd?'':'disabled'}>Aprobar y enviar al conductor</button></div>`:''}
+ ${contactLog(t)}</div>`;}
+
+ASCR.viajes=()=>{const list=S.trips.filter(t=>t.accepted).sort((x,y)=>isDone(x)-isDone(y)),sel=S.admin.sel,t=sel&&trip(sel);
+ const item=x=>{const na=S.alerts.filter(a=>a.tripId===x.id&&a.status==='abierta').length;return `<button class="card a-item ${sel===x.id?'sel':''}" data-a="aSel" data-v="${x.id}"><div class="row" style="justify-content:space-between"><b>${x.id}</b>${statusBadge(x)}</div><div class="faint">${esc(x.client)}</div><div style="margin-top:6px;font-weight:700">${rte(x)}</div><div class="faint">${dOf(x).name}${na?` · <b style="color:var(--bad)">${na} alerta${na>1?'s':''}</b>`:''}${x.status==='EN_PUERTO'&&!x.pinSent?' · <b style="color:var(--warn)">falta PIN de retiro</b>':''}</div></button>`;};
+ return aTop('Viajes','Seguimiento individual de cada servicio')+mdView(list.map(item).join(''),t?tripAdmin(t):'',!!t,'Aún no hay viajes asignados. Aparecen aquí cuando un conductor acepta un servicio.');};
+function tripAdmin(t){const tk=S.tickets.filter(k=>k.tripId===t.id),q=t.offer.q,al=S.alerts.filter(a=>a.tripId===t.id),selfie=t.events.some(e=>e.ev==='SELFIE');
+ const pinCard=t.status==='EN_PUERTO'?`<div class="card"><div class="h3" style="margin-bottom:8px">Autorizar retiro del contenedor</div><div class="docs">
+  <div class="docrow good">${ic('check',18)}<span class="grow">El conductor llegó dentro de la geocerca (menos de 300 m)</span></div>
+  <div class="docrow ${selfie?'good':'warn'}">${ic(selfie?'check':'alert',18)}<span class="grow">Selfie en tiempo real coincide con el conductor registrado</span></div>
+  <div class="docrow ${t.cita?'good':'warn'}">${ic(t.cita?'check':'alert',18)}<span class="grow">Cita en el terminal: ${t.cita?fmtDT(t.cita):'sin registrar'}</span></div>
+  <div class="docrow ${t.pay?'good':'warn'}">${ic(t.pay?'check':'alert',18)}<span class="grow">Pago retenido: ${t.pay?cop(t.pay.amount):'no'}</span></div></div>
+  ${t.pinSent?`<span class="badge b-ok">${ic('check',13)}PIN de retiro enviado por SMS al conductor</span>`:`<button class="btn btn-primary btn-sm" data-a="aSendPin" data-v="${t.id}">Enviar PIN de retiro por SMS</button>`}</div>`:'';
+ return `<div class="stack"><div class="card"><div class="row" style="justify-content:space-between;flex-wrap:wrap;gap:8px"><div><div class="faint">${t.id} · ${esc(t.client)} · ${CT[t.ct].label} ${esc(t.cno)}</div><div class="h2">${rte(t)}</div></div>${statusBadge(t)}</div>${miniSteps(t)}
+ <div class="row" style="margin-top:12px;justify-content:space-between;flex-wrap:wrap"><span class="live ${tracking(t)&&!t.silent?'':'off'}" data-live="gps">${ic('gps',15)}${tracking(t)?(t.silent?'Sin señal de GPS':'GPS en vivo · '+ago(t.lastGps)):'Rastreo detenido'}</span><span class="faint" data-live="aeta">${tracking(t)?`A ${kmTxt(distTo(t))} del siguiente punto`:''}</span></div></div>
+ ${al.filter(a=>a.status==='abierta').map(a=>`<button class="card a-item alertcard ${ALK[a.kind][1]}" data-a="aOpen" data-v="alertas|${a.id}"><b>${ALK[a.kind][0]}</b><div class="faint">${esc(a.text)} · ${ago(a.at)}</div></button>`).join('')}
+ <div class="card" style="padding:0;overflow:hidden">${mapSVG(t,300,'meet')}</div>${pinCard}
+ <div class="grid2a">${personCard(t,'conductor')}${personCard(t,'cliente')}</div>
+ <div class="card"><div class="h3" style="margin-bottom:8px">Pago y seguro</div><dl class="kv"><dt>Total cliente</dt><dd class="num">${cop(q.total)}</dd><dt>Pago</dt><dd>${t.pay?`${t.pay.status} · ${esc(t.pay.method)}`:'—'}</dd><dt>Comisión ${Math.round(COMM*100)} %</dt><dd class="num">${cop(q.com)}</dd><dt>Al conductor</dt><dd class="num">${cop(q.neto)}</dd><dt>Póliza</dt><dd>${SEG[t.seg.plan].name} · ${cop(t.seg.cif)}</dd><dt>Vacío</dt><dd>${esc(vacLabel(t))} · ${t.plazo==='expres'?'exprés':'consolidado'}</dd></dl></div>
+ <div class="card"><div class="h3" style="margin-bottom:8px">Chat cliente ↔ conductor</div><div class="thread">${t.chat.length?t.chat.map(m=>`<div class="msg ${m.by==='admin'?'staff':''}"><div class="faint">${m.by==='admin'?BRAND:m.by==='cliente'?'Cliente':'Conductor'} · ${fmtT(m.at)}</div>${m.photo?'[foto] ':''}${esc(m.text||'')}</div>`).join(''):'<div class="faint">Sin mensajes.</div>'}</div>
+  <div class="row" style="margin-top:10px"><input class="input" id="achat-${t.id}" placeholder="Intervenir en el chat como ${BRAND}"><button class="btn btn-secondary btn-sm" data-a="aChat" data-v="${t.id}">Enviar</button></div></div>
+ ${t.evidences.length?`<div class="card"><div class="h3" style="margin-bottom:10px">Evidencias</div><div class="evgrid">${t.evidences.map(evTile).join('')}</div></div>`:''}
+ ${tk.length?`<div class="card"><div class="h3" style="margin-bottom:10px">Novedades y consultas</div><div class="stack">${tk.map(k=>`<button class="card a-item" data-a="aOpen" data-v="bandeja|${k.id}"><div class="row" style="justify-content:space-between"><b>${esc(k.type)}</b><span class="badge ${k.status==='abierto'?'b-warn':'b-ok'}">${k.status==='abierto'?'Abierto':'Resuelto'}</span></div><div class="faint">${esc(k.who)} · ${esc(k.text)}</div></button>`).join('')}</div></div>`:''}
+ ${contactLog(t)}</div>`;}
+
+ASCR.alertas=()=>{const f=S.admin.tf==='todos'?'todos':'abiertas',list=[...S.alerts].filter(a=>f==='todos'||a.status==='abierta').sort((x,y)=>y.at-x.at),sel=S.admin.sel,a=sel&&S.alerts.find(x=>x.id===sel);
+ const chips=`<div class="chips" style="padding:0 0 4px">${[['abiertas','Abiertas'],['todos','Todas']].map(([v,l])=>`<button class="chip" aria-pressed="${f===v}" data-a="aTf" data-v="${v}">${l}</button>`).join('')}</div>`;
+ const item=x=>`<button class="card a-item alertcard ${ALK[x.kind][1]} ${sel===x.id?'sel':''}" data-a="aSel" data-v="${x.id}"><div class="row" style="justify-content:space-between"><b>${ALK[x.kind][0]}</b><span class="badge ${x.status==='abierta'?'b-bad':'b-ok'}">${x.status==='abierta'?'Abierta':'Atendida'}</span></div><div class="faint">${x.tripId} · ${esc(x.by)} · ${ago(x.at)}</div><div style="margin-top:4px">${esc(x.text)}</div></button>`;
+ let det='';if(a){const t=trip(a.tripId),open=a.status==='abierta';
+  det=`<div class="stack"><div class="card alertcard ${ALK[a.kind][1]}"><div class="row" style="justify-content:space-between;flex-wrap:wrap"><div><div class="faint">${a.id} · ${fmtDT(a.at)}</div><div class="h2">${ALK[a.kind][0]}</div></div><span class="badge ${open?'b-bad':'b-ok'}">${open?'Abierta':'Atendida'}</span></div>
+   <p style="margin:10px 0">${esc(a.text)}</p><dl class="kv"><dt>Viaje</dt><dd>${a.tripId} · ${rte(t)}</dd><dt>Conductor</dt><dd>${esc(a.by)} · ${dOf(t).plate}</dd><dt>Cliente</dt><dd>${esc(t.client)}</dd><dt>Ubicación</dt><dd class="num">${a.lat.toFixed(4)}, ${a.lng.toFixed(4)}</dd></dl></div>
+   ${open?`<div class="card"><div class="h3" style="margin-bottom:10px">Acciones</div><div class="row" style="flex-wrap:wrap;gap:8px">
+    <button class="btn btn-secondary btn-sm" data-a="aCall" data-v="${t.id}|conductor">${ic('phone',18)}Llamar al conductor</button><button class="btn btn-secondary btn-sm" data-a="aMsg" data-v="${t.id}|cliente">${ic('chat',18)}Avisar al cliente</button>
+    ${a.kind==='CANCELACION'?`<button class="btn btn-ok btn-sm" data-a="aCancelOk" data-v="${a.id}">Aprobar y reasignar</button><button class="btn btn-secondary btn-sm" data-a="aCancelNo" data-v="${a.id}">Rechazar</button>`:''}
+    ${a.kind==='SELFIE'?`<button class="btn btn-ok btn-sm" data-a="aSelfieOk" data-v="${a.id}">Autorizar tras revisión manual</button><button class="btn btn-secondary btn-sm" data-a="aSuspend" data-v="${a.id}">Suspender conductor</button>`:''}
+    ${a.act==='pin'?`<button class="btn btn-ok btn-sm" data-a="aPinOverride" data-v="${a.id}">Autorizar entrega sin PIN</button>`:''}
+    ${a.kind==='PANICO'?`<button class="btn btn-secondary btn-sm" data-a="fake" data-v="Aviso a autoridades y a la aseguradora (simulado)">Escalar a autoridades</button>`:''}
+    ${!['CANCELACION','SELFIE'].includes(a.kind)&&a.act!=='pin'?`<button class="btn btn-ok btn-sm" data-a="aAlertDone" data-v="${a.id}">Marcar atendida</button>`:''}
+   </div></div>`:''}<button class="btn btn-secondary btn-sm" data-a="aOpen" data-v="viajes|${t.id}">Ver el viaje ${t.id}</button></div>`;}
+ return aTop('Alertas','Seguridad: emergencias, desvíos, paradas, GPS sin señal e identidad')+chips+`<div style="margin-top:12px">${mdView(list.map(item).join(''),det,!!a,'No hay alertas. Si el conductor activa una emergencia o el sistema detecta una anomalía, aparece aquí.')}</div>`;};
+
+ASCR.bandeja=()=>{const f=S.admin.tf,list=S.tickets.filter(k=>f==='todos'||(f==='abiertos'?k.status==='abierto':k.status==='resuelto')).sort((x,y)=>y.at-x.at),sel=S.admin.sel,k=sel&&S.tickets.find(x=>x.id===sel);
+ const chips=`<div class="chips" style="padding:0 0 4px">${[['abiertos','Abiertos'],['resueltos','Resueltos'],['todos','Todos']].map(([v,l])=>`<button class="chip" aria-pressed="${f===v}" data-a="aTf" data-v="${v}">${l}</button>`).join('')}</div>`;
+ const item=x=>`<button class="card a-item ${sel===x.id?'sel':''}" data-a="aSel" data-v="${x.id}"><div class="row" style="justify-content:space-between"><b>${esc(x.type)}</b><span class="badge ${x.from==='cliente'?'b-brand':'b-warn'}">${x.from==='cliente'?'Cliente':'Conductor'}</span></div><div class="faint">${esc(x.who)} · ${x.tripId}</div><div style="margin-top:6px">${esc(x.text.length>80?x.text.slice(0,80)+'…':x.text)}</div><div class="faint" style="margin-top:4px">${x.status==='abierto'?'Abierto':'Resuelto'} · ${ago(x.at)}</div></button>`;
+ const det=k?`<div class="stack">${threadHtml(k)}<div class="card"><label class="field"><span>Responder ${k.from==='cliente'?'al cliente':'al conductor'}</span><textarea class="input" id="rep-${k.id}" placeholder="Escribe la respuesta que verá en su app…"></textarea></label>
+  <div class="row" style="margin-top:10px;flex-wrap:wrap"><button class="btn btn-primary btn-sm" data-a="aReply" data-v="${k.id}">Responder</button>${k.status==='abierto'?`<button class="btn btn-secondary btn-sm" data-a="aResolve" data-v="${k.id}">Marcar resuelto</button>`:''}<button class="btn btn-secondary btn-sm" data-a="aOpen" data-v="${trip(k.tripId)?.accepted?'viajes':'solicitudes'}|${k.tripId}">Ver viaje ${k.tripId}</button></div></div></div>`:'';
+ return aTop('Bandeja','Consultas de clientes y comentarios de conductores')+chips+`<div style="margin-top:12px">${mdView(list.map(item).join(''),det,!!k,'No hay mensajes con este filtro.')}</div>`;};
+
+ASCR.clientes=()=>{const ents=Object.entries(S.clients),sel=S.admin.sel,c=sel&&S.clients[sel];
+ const item=([nm,x])=>`<button class="card a-item ${sel===nm?'sel':''}" data-a="aSel" data-v="${esc(nm)}"><div class="row" style="justify-content:space-between;gap:8px"><b>${esc(nm)}</b>${rvBadge(x.verified)}</div><div class="faint">${x.size} · nivel ${x.level} · NIT ${x.nit}</div>${x.upgrade?'<div><span class="badge b-warn" style="margin-top:6px">Pide nivel completo</span></div>':''}</button>`;
+ const det=c?`<div class="stack"><div class="card"><div class="row" style="justify-content:space-between;flex-wrap:wrap;gap:8px"><div><div class="h2">${esc(sel)}</div><div class="muted">${c.size} · nivel ${c.level}</div></div>${rvBadge(c.verified)}</div><div class="divider"></div>
+  <dl class="kv"><dt>NIT</dt><dd>${c.nit}</dd><dt>Contacto</dt><dd>${esc(c.contact)}</dd><dt>Celular</dt><dd>${c.phone}</dd><dt>Correo</dt><dd>${c.email}</dd><dt>Tope por operación</dt><dd>${c.level==='completo'?'Sin tope':cop(KYCLIM)}</dd><dt>Viajes</dt><dd>${S.trips.filter(t=>t.client===sel).length}</dd></dl></div>
+  <div class="card"><div class="h3" style="margin-bottom:6px">Verificación por niveles</div><div class="faint" style="margin-bottom:10px">Básico para pequeños compradores. Completo para importadores grandes o valores altos.</div><div class="docs">${KYC.map(k=>`<div class="docrow ${(c.level==='completo'?k[2]:k[1])?'good':''}">${ic('doc',18)}<span class="grow">${k[0]}</span><span class="faint">${k[1]?'Básico':''}${k[1]&&k[2]?' y ':''}${k[2]&&!k[1]?'Solo completo':k[2]?'completo':''}</span></div>`).join('')}</div>
+  ${c.verified!=='ok'?`<div class="row" style="flex-wrap:wrap"><button class="btn btn-ok btn-sm" data-a="aVerifyClient" data-v="${esc(sel)}|ok">Verificar empresa</button><button class="btn btn-secondary btn-sm" data-a="aVerifyClient" data-v="${esc(sel)}|rechazado">Rechazar</button></div>`:''}
+  ${c.upgrade?`<div class="row" style="margin-top:10px"><button class="btn btn-primary btn-sm" data-a="aLevel" data-v="${esc(sel)}">Aprobar nivel completo</button></div>`:''}</div></div>`:'';
+ return aTop('Clientes','Verificación de empresas por niveles')+mdView(ents.map(item).join(''),det,!!c,'');};
+
+ASCR.conductores=()=>`${aTop('Conductores','Estado, documentos y contacto directo')}<div class="conn">${DRIVERS.map(d=>{const at=activeTripOf(d.id),susp=(S.susp||{})[d.id];return `<div class="card">
+ <div class="row"><span class="avatar">${initials(d.name)}</span><div class="grow"><b>${d.name}</b><div class="faint">${d.carrier} · RNDC</div></div></div>
+ <div class="row" style="flex-wrap:wrap;gap:6px"><span class="badge ${susp?'b-bad':'b-ok'}">${ic('shield',13)}${susp?'Suspendido':'Verificado'}</span><span class="badge b-neutral">${d.plate}</span><span class="badge b-neutral">★ ${d.rating}</span><span class="badge ${S.online[d.id]?'b-ok':'b-neutral'}">${S.online[d.id]?'Conectado':'Desconectado'}</span>${d.id==='d2'?'<span class="badge b-warn">SOAT vence en 9 días</span>':d.id==='d3'?'<span class="badge b-warn">Tecnomecánica vence en 20 días</span>':''}</div>
+ <p>${at?`En viaje ${at.id}: ${ST[at.status].label}, ${rte(at)}`:'Disponible para nuevos servicios'}</p>
+ <div class="row" style="flex-wrap:wrap;gap:8px"><button class="btn btn-secondary btn-sm" data-a="aCallD" data-v="${d.id}">${ic('phone',18)}Llamar</button>${at?`<button class="btn btn-secondary btn-sm" data-a="aOpen" data-v="viajes|${at.id}">Ver viaje</button>`:''}</div></div>`;}).join('')}</div>`;
+
+const CONN=[['hubspot','HubSpot','CRM','Crea un negocio por contenedor y registra cada cambio de estado.'],['salesforce','Salesforce','CRM','Sincroniza cada viaje como registro vinculado a la cuenta.'],['zoho','Zoho CRM','CRM','Actualiza el estado del envío en un módulo de tratos.'],['odoo','Odoo','ERP','Prepara la recepción de inventario al entregar.'],['sheets','Google Sheets','Hoja de cálculo','Agrega una fila por cada cambio de estado.'],['excel','Excel / CSV','Archivo','Carga masiva de contenedores y exportación de viajes.']];
+ASCR.integraciones=()=>{const nm=S.admin.ic,c=S.clients[nm],t=S.trips.filter(x=>x.client===nm).at(-1),slug=nm.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').split(' ')[0];
+ const payload=t?JSON.stringify({event:'trip.status_changed',trip_id:t.id,container:t.cno,status:t.status,location:geoAt(t),evidence_count:t.evidences.length,occurred_at:new Date(t.events.at(-1).at).toISOString()},null,2):'{}';
+ return `${aTop('Integraciones','Conexión con el CRM o ERP de cada cliente')}
+ <div class="card" style="border-color:var(--signal);margin-bottom:12px"><b>${ic('alert',16)} Fuera del alcance del MVP</b><div class="muted" style="font-size:14px">Esta sección es una vista previa de una fase posterior. El MVP solo incluye seguimiento, avisos por correo y exportación a Excel.</div></div>
+ <div class="chips" style="padding:0 0 12px">${Object.keys(S.clients).map(k=>`<button class="chip" aria-pressed="${k===nm}" data-a="aIntegFor" data-v="${esc(k)}">${esc(k)}</button>`).join('')}</div>
+ <div class="conn">${CONN.map(([k,n,cat,desc])=>`<div class="card"><div class="row" style="justify-content:space-between;gap:8px"><b>${n}</b><span class="badge b-neutral">${cat}</span></div><p>${desc}</p><button class="btn ${c.integ[k]?'btn-ok':'btn-secondary'} btn-sm" data-a="aConn" data-v="${k}">${c.integ[k]?ic('check',16)+'Conectado':'Conectar'}</button></div>`).join('')}</div>
+ <div class="section-t">Ejemplo de evento (webhook)</div><div class="card"><pre class="code">${esc(payload)}</pre></div>`;};
+
+
+Object.assign(A,{
+// --- admin ---
+ aSec(v){S.admin.sec=v;S.admin.sel=null;S.admin.tf=v==='alertas'?'abiertas':v==='bandeja'?'abiertos':S.admin.tf;render(true);},
+ aSel(v){S.admin.sel=v;render(true);},
+ aBack(){S.admin.sel=null;render(true);},
+ aOpen(v){const i=v.indexOf('|');S.admin.sec=v.slice(0,i);S.admin.sel=v.slice(i+1);if(S.admin.sec==='bandeja'||S.admin.sec==='alertas')S.admin.tf='todos';render(true);},
+ aTf(v){S.admin.tf=v;S.admin.sel=null;render(true);},
+ aIntegFor(v){S.admin.sec='integraciones';S.admin.ic=v;render(true);},
+ aConn(k){const c=S.clients[S.admin.ic];c.integ[k]=!c.integ[k];render();toast(c.integ[k]?`${CONN.find(x=>x[0]===k)[1]} conectado (simulado)`:'Integración desconectada','swap');},
+ aVerifyClient(v){const [nm,st]=v.split('|');S.clients[nm].verified=st;
+  if(nm===CLIENT.company)notify('client',st==='ok'?`Tu empresa fue verificada por ${BRAND}`:'No pudimos verificar tu empresa. Revisa los documentos en tu perfil.');
+  render();toast(st==='ok'?'Empresa verificada':'Verificación rechazada; se notificó al cliente',st==='ok'?'check':'alert');},
+ aLevel(nm){const c=S.clients[nm];c.level='completo';c.upgrade=false;if(nm===CLIENT.company)notify('client','Tu empresa ahora tiene nivel de verificación completo');render();toast('Nivel completo aprobado','check');},
+ aDoc(id){const t=trip(id);t.review.doc='ok';logContact(t,'Validación','Documentos',`BL ${t.bl} y contenedor ${t.cno} validados`);render();toast('Documentos validados','check');},
+ aCita(id){const t=trip(id);t.cita=new Date(t.date+'T09:00').getTime();logContact(t,'Cita','Terminal',`Cita registrada en ${PLACES[t.o].short}: ${fmtDT(t.cita)}`);render();toast('Cita registrada','check');},
+ aRejectDoc(id){sheet(`<div class="h2">Rechazar documento</div><p class="muted">El cliente verá el motivo y podrá adjuntar un documento corregido.</p>
+  <label class="field"><span>Motivo</span><select class="input" id="rj">${['El consignatario no coincide con el NIT de la empresa','Falta el endoso o la carta de autorización','El contenedor no aparece en el BL','El documento es ilegible'].map(x=>`<option>${x}</option>`).join('')}</select></label>
+  <button class="btn btn-primary" style="margin-top:12px" data-a="aConfirmReject" data-v="${id}">Rechazar y notificar al cliente</button>${cancelBtn}`);},
+ aConfirmReject(id){const t=trip(id),r=document.getElementById('rj').value;t.review.doc='rechazado';t.review.reason=r;logContact(t,'Rechazo','Documentos',r);notifyClient(t,`Revisa el documento de ${id}: ${r}`);closeSheet();render();toast('Documento rechazado; se notificó al cliente','alert');},
+ aCall(v){const [id,role]=v.split('|'),t=trip(id),d=dOf(t),c=clientOf(t);
+  logContact(t,'Llamada',role==='conductor'?'Conductor':'Cliente',`Llamada saliente a ${role==='conductor'?d.name+' ('+d.phone+')':c.contact+' ('+c.phone+')'} (simulada)`);
+  if(role==='conductor'&&t.review.driver==='pendiente')t.review.driver='contactado';render();toast(`Llamada registrada con ${role==='conductor'?d.name:c.contact}`,'phone');},
+ aCallD(did){const d=drv(did),at=activeTripOf(did);if(at)logContact(at,'Llamada','Conductor',`Llamada saliente a ${d.name} (simulada)`);render();toast(`Llamada simulada a ${d.name}`,'phone');},
+ aMsg(v){const [id,role]=v.split('|'),t=trip(id),d=dOf(t),c=clientOf(t);
+  const txt=role==='conductor'?(needsReview(t)?`Hola ${d.name.split(' ')[0]}, te habla ${BRAND}. ${t.client} te eligió para el servicio ${t.id} (${rte(t)}, ${CT[t.ct].label}) con recogida el ${fmtD(t.date+'T12:00')}. ¿Confirmas disponibilidad?`:`Hola ${d.name.split(' ')[0]}, ¿cómo va el viaje ${t.id}? ¿Alguna novedad?`):`Hola ${c.contact.split(' ')[0]}, te escribe ${BRAND} sobre el servicio ${t.id} (${rte(t)}). `;
+  sheet(`<div class="h2">${role==='conductor'?'Mensaje al conductor':'Notificar al cliente'}</div><p class="muted">Llega como notificación en la app y queda en el historial del viaje.</p>
+  <textarea class="input" id="am-text" style="min-height:120px">${esc(txt)}</textarea><button class="btn btn-primary" style="margin-top:12px" data-a="aSendMsg" data-v="${id}|${role}">Enviar</button>${cancelBtn}`);},
+ aSendMsg(v){const [id,role]=v.split('|'),t=trip(id),text=document.getElementById('am-text').value.trim();if(!text)return;
+  logContact(t,'Mensaje',role==='conductor'?'Conductor':'Cliente',text);notify(role==='conductor'?'driver':'client',BRAND+': '+text);
+  if(role==='conductor'&&t.review.driver==='pendiente')t.review.driver='contactado';closeSheet();render();toast('Mensaje enviado','check');},
+ aDriverOk(id){const t=trip(id);t.review.driver='confirmado';logContact(t,'Confirmación','Conductor',`${dOf(t).name} confirmó disponibilidad para la fecha pedida`);render();toast('Disponibilidad confirmada','check');},
+ aApprove(id){const t=trip(id);if(!reviewReady(t))return;t.adminApproved=true;logContact(t,'Aprobación','Sistema','Solicitud aprobada y enviada al conductor');
+  notifyClient(t,`${BRAND} validó tu solicitud ${id}. El conductor la aceptará en su app.`);notify('driver',`Servicio ${id} confirmado por ${BRAND}. Acéptalo en Servicios.`);
+  render();toast('Aprobada. El conductor ya la ve en su app.','check');},
+ aSendPin(id){const t=trip(id);t.pinSent=true;logContact(t,'PIN de retiro','Conductor','PIN de retiro enviado por SMS tras validar llegada, selfie, cita y pago');notify('driver',`PIN de retiro de ${id} enviado por SMS. Ya puedes retirar el contenedor.`);render();toast('PIN enviado por SMS al conductor','check');},
+ aChat(id){const el=document.getElementById('achat-'+id),text=el.value.trim();if(!text)return;const t=trip(id);t.chat.push({by:'admin',text,at:now()});logContact(t,'Chat','Intervención',text);notify('client',`${BRAND} escribió en el chat de ${id}`);notify('driver',`${BRAND} escribió en el chat de ${id}`);render();toast('Mensaje enviado al chat','check');},
+ aNote(id){const el=document.getElementById('note-'+id),text=el.value.trim();if(!text){toast('Escribe la nota primero','alert');return;}logContact(trip(id),'Nota','Interna',text);render();toast('Nota guardada','check');},
+ aReply(id){const k=S.tickets.find(x=>x.id===id),text=document.getElementById('rep-'+id).value.trim();if(!text){toast('Escribe la respuesta primero','alert');return;}
+  k.msgs.push({by:BRAND,text,at:now(),staff:true});const t=trip(k.tripId);if(t)logContact(t,'Respuesta',k.from==='cliente'?'Cliente':'Conductor',text);
+  notify(k.from==='cliente'?'client':'driver',`${BRAND} respondió sobre ${k.tripId}: ${text}`);render();toast('Respuesta enviada','check');},
+ aResolve(id){const k=S.tickets.find(x=>x.id===id);k.status='resuelto';render();toast('Marcado como resuelto','check');},
+ aAlertDone(id){const a=S.alerts.find(x=>x.id===id);a.status='atendida';const t=trip(a.tripId);logContact(t,'Alerta','Operaciones',`${ALK[a.kind][0]} atendida`);render();toast('Alerta marcada como atendida','check');},
+ aCancelOk(id){const a=S.alerts.find(x=>x.id===id),t=trip(a.tripId),old=t.offer.q;a.status='atendida';
+  t.accepted=false;t.driverId=null;t.offer={driverId:null,q:old};t.pinSent=false;t.cancelReq=false;t.silent=false;t.progress=0;t.evidences=[];pushEvent(t,'SOLICITADO',BRAND+' (reasignación)');
+  logContact(t,'Cancelación','Conductor','Cancelación del conductor aprobada. Se reasigna sin costo para el cliente');
+  notifyClient(t,`Tu conductor no puede realizar ${t.id}. Estamos asignando otro sin costo para ti.`);notify('driver',`Cancelación de ${t.id} aprobada`);render();toast('Aprobada. El servicio vuelve a estar disponible para otros conductores','check');},
+ aCancelNo(id){const a=S.alerts.find(x=>x.id===id),t=trip(a.tripId);a.status='atendida';t.cancelReq=false;notify('driver',`Cancelación de ${t.id} rechazada: debes continuar con el servicio`);render();toast('Cancelación rechazada','alert');},
+ aSelfieOk(id){const a=S.alerts.find(x=>x.id===id),t=trip(a.tripId);a.status='atendida';t.selfieOk=true;logContact(t,'Identidad','Operaciones','Identidad verificada manualmente por videollamada');notify('driver','Identidad verificada. Repite la selfie y confirma tu llegada.');render();toast('Identidad autorizada','check');},
+ aSuspend(id){const a=S.alerts.find(x=>x.id===id),t=trip(a.tripId);(S.susp||(S.susp={}))[t.driverId]=true;S.online[t.driverId]=false;a.status='atendida';logContact(t,'Seguridad','Operaciones','Conductor suspendido por selfie que no coincide');render();toast('Conductor suspendido','alert');},
+ aPinOverride(id){const a=S.alerts.find(x=>x.id===id),t=trip(a.tripId);a.status='atendida';t.pinOverride=true;logContact(t,'Entrega','Operaciones','Entrega sin PIN autorizada tras confirmar con el cliente por llamada');notify('driver','Entrega sin PIN autorizada. Puedes confirmar la entrega.');render();toast('Entrega sin PIN autorizada','check');},
+});
+
+function render(nav){document.body.classList.add('is-admin');renderAdmin(nav);}
+function showNotices(){const un=S.notices.filter(n=>!n.seen&&n.to==='admin');if(!un.length)return;un.forEach(n=>n.seen=true);persist();toast(un.length>1?`${un.at(-1).text} (+${un.length-1} más)`:un[0].text,'bell');}
+function tick(){const t=S.admin.sec==='viajes'&&S.admin.sel?trip(S.admin.sel):null;if(!t)return;liveMap('#admin',t);
+ const g=document.querySelector('#admin [data-live="gps"]');if(g&&tracking(t))g.innerHTML=ic('gps',15)+(t.silent?'Sin señal de GPS':'GPS en vivo · '+ago(t.lastGps));
+ const e=document.querySelector('#admin [data-live="aeta"]');if(e&&tracking(t))e.textContent=`A ${kmTxt(distTo(t))} del siguiente punto`;}
+document.addEventListener('click',e=>{const el=e.target.closest('[data-a]');if(!el)return;if(el.dataset.a==='closeSheetBg'&&e.target!==el)return;const fn=A[el.dataset.a];if(!fn)return;
+ if(el.tagName!=='INPUT')e.preventDefault();fn(el.dataset.v,el,e);persist();lastSig=sig();});
+let lastSig='';
+window.addEventListener('storage',e=>{if(e.key!==SKEY)return;loadShared();const s=sig();if(s===lastSig){tick();return;}lastSig=s;
+ const ae=document.activeElement;if(!(ae&&/INPUT|TEXTAREA|SELECT/.test(ae.tagName)))renderAdmin(false);showNotices();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeSheet();});
+document.title=BRAND+' · Panel admin';document.getElementById('brand-tag').textContent=BRAND+' · panel admin (web)';
+S=seed();S.mode='admin';if(!loadShared())persist();lastSig=sig();render(true);showNotices();
+setInterval(tick,1000);
+
+</script>
+</body>
+</html>
